@@ -128,19 +128,158 @@
        (let ((x (string-copy "abcdefg")))
          (string-copy! x 2 "ZABCDEFG" 3 6)
          x))
-(test "string-take" "Pete S"  (string-take "Pete Szilagyi" 6))
-(test "string-take" ""        (string-take "Pete Szilagyi" 0))
-(test "string-take" "Pete Szilagyi" (string-take "Pete Szilagyi" 13))
-(test "string-drop" "zilagyi" (string-drop "Pete Szilagyi" 6))
-(test "string-drop" "Pete Szilagyi" (string-drop "Pete Szilagyi" 0))
-(test "string-drop" ""        (string-drop "Pete Szilagyi" 13))
+(test "string-take (1)" "Pete S"  (string-take "Pete Szilagyi" 6))
+(test "string-take (2)" ""        (string-take "Pete Szilagyi" 0))
+(test "string-take (3)" "Pete Szilagyi" (string-take "Pete Szilagyi" 13))
 
-(test "string-take-right" "rules" (string-take-right "Beta rules" 5))
-(test "string-take-right" ""      (string-take-right "Beta rules" 0))
-(test "string-take-right" "Beta rules" (string-take-right "Beta rules" 10))
-(test "string-drop-right" "Beta " (string-drop-right "Beta rules" 5))
-(test "string-drop-right" "Beta rules" (string-drop-right "Beta rules" 0))
-(test "string-drop-right" ""      (string-drop-right "Beta rules" 10))
+(test "string-take (4)" "" (string-take "" 0))
+(test "string-take (5)" "a" (string-take "abc" 1))
+(test "string-take (6)" "ab" (string-take "abc" 2))
+(test "string-take (7)" "abc" (string-take "abc" 3))
+
+;; string-take arity errors
+(test-error "string-take arity error (1)" (string-take))
+(test-error "string-take arity error (2)" (string-take ""))
+
+;; string-take invalid argument type errors
+(test-error "string-take invalid first arg (number)" (string-take 0 0))
+(test-error "string-take invalid first arg (boolean)" (string-take #f 0))
+(test-error "string-take invalid first arg (char)" (string-take #\a 0))
+(test-error "string-take invalid first arg (list)" (string-take '() 0))
+(test-error "string-take invalid first arg (vector)" (string-take '#() 0))
+(test-error "string-take invalid first arg (char set)" (string-take char-set:blank 0))
+(test-error "string-take invalid first arg (symbol)" (string-take 'foo 0))
+(test-error "string-take invalid first arg (procedure)" (string-take (lambda _ _) 0))
+(test-error "string-take invalid first arg (unspecified)" (string-take (if #f #f) 0))
+
+(test-error "string-take invalid second arg (string)" (string-take "" ""))
+(test-error "string-take invalid second arg (boolean)" (string-take "" #f))
+(test-error "string-take invalid second arg (char)" (string-take "" #\a))
+(test-error "string-take invalid second arg (list)" (string-take "" '()))
+(test-error "string-take invalid second arg (vector)" (string-take "" '#()))
+(test-error "string-take invalid second arg (char set)" (string-take "" char-set:blank))
+(test-error "string-take invalid second arg (symbol)" (string-take "" 'foo))
+(test-error "string-take invalid second arg (procedure)" (string-take "" (lambda _ _)))
+(test-error "string-take invalid second arg (unspecified)" (string-take "" (if #f #f)))
+
+;; string-take out-of-bounds errors
+(test-error "string-take out of bounds arg (1)" (string-take "foo" -1))
+(test-error "string-take out of bounds arg (2)" (string-take "foo" 10))
+
+;; string-drop
+(test "string-drop (1)" "zilagyi" (string-drop "Pete Szilagyi" 6))
+(test "string-drop (2)" "Pete Szilagyi" (string-drop "Pete Szilagyi" 0))
+(test "string-drop (3)" ""        (string-drop "Pete Szilagyi" 13))
+(test "string-drop (4)" "" (string-drop "" 0))
+(test "string-drop (5)" "bc" (string-drop "abc" 1))
+(test "string-drop (6)" "c" (string-drop "abc" 2))
+(test "string-drop (7)" "" (string-drop "abc" 3))
+
+;; string-drop arity errors
+(test-error "string-drop arity error (1)" (string-drop))
+(test-error "string-drop arity error (2)" (string-drop ""))
+
+;; string-drop invalid argument type errors
+(test-error "string-drop invalid first arg (number)" (string-drop 0 0))
+(test-error "string-drop invalid first arg (boolean)" (string-drop #f 0))
+(test-error "string-drop invalid first arg (char)" (string-drop #\a 0))
+(test-error "string-drop invalid first arg (list)" (string-drop '() 0))
+(test-error "string-drop invalid first arg (vector)" (string-drop '#() 0))
+(test-error "string-drop invalid first arg (char set)" (string-drop char-set:blank 0))
+(test-error "string-drop invalid first arg (symbol)" (string-drop 'foo 0))
+(test-error "string-drop invalid first arg (procedure)" (string-drop (lambda _ _) 0))
+(test-error "string-drop invalid first arg (unspecified)" (string-drop (if #f #f) 0))
+
+(test-error "string-drop invalid second arg (string)" (string-drop "" ""))
+(test-error "string-drop invalid second arg (boolean)" (string-drop "" #f))
+(test-error "string-drop invalid second arg (char)" (string-drop "" #\a))
+(test-error "string-drop invalid second arg (list)" (string-drop "" '()))
+(test-error "string-drop invalid second arg (vector)" (string-drop "" '#()))
+(test-error "string-drop invalid second arg (char set)" (string-drop "" char-set:blank))
+(test-error "string-drop invalid second arg (symbol)" (string-drop "" 'foo))
+(test-error "string-drop invalid second arg (procedure)" (string-drop "" (lambda _ _)))
+(test-error "string-drop invalid second arg (unspecified)" (string-drop "" (if #f #f)))
+
+;; string-drop out-of-bounds errors
+(test-error "string-drop out of bounds arg (1)" (string-drop "foo" -1))
+(test-error "string-drop out of bounds arg (2)" (string-drop "foo" 10))
+
+;; string-take-right
+(test "string-take-right (1)" "rules" (string-take-right "Beta rules" 5))
+(test "string-take-right (2)" ""      (string-take-right "Beta rules" 0))
+(test "string-take-right (3)" "Beta rules" (string-take-right "Beta rules" 10))
+(test "string-take-right (4)" "" (string-take-right "" 0))
+(test "string-take-right (5)" "c" (string-take-right "abc" 1))
+(test "string-take-right (6)" "bc" (string-take-right "abc" 2))
+(test "string-take-right (7)" "abc" (string-take-right "abc" 3))
+
+;; string-take-right arity errors
+(test-error "string-take-right arity error (1)" (string-take-right))
+(test-error "string-take-right arity error (2)" (string-take-right ""))
+
+;; string-take-right invalid argument type errors
+(test-error "string-take-right invalid first arg (number)" (string-take-right 0 0))
+(test-error "string-take-right invalid first arg (boolean)" (string-take-right #f 0))
+(test-error "string-take-right invalid first arg (char)" (string-take-right #\a 0))
+(test-error "string-take-right invalid first arg (list)" (string-take-right '() 0))
+(test-error "string-take-right invalid first arg (vector)" (string-take-right '#() 0))
+(test-error "string-take-right invalid first arg (char set)" (string-take-right char-set:blank 0))
+(test-error "string-take-right invalid first arg (symbol)" (string-take-right 'foo 0))
+(test-error "string-take-right invalid first arg (procedure)" (string-take-right (lambda _ _) 0))
+(test-error "string-take-right invalid first arg (unspecified)" (string-take-right (if #f #f) 0))
+
+(test-error "string-take-right invalid second arg (string)" (string-take-right "" ""))
+(test-error "string-take-right invalid second arg (boolean)" (string-take-right "" #f))
+(test-error "string-take-right invalid second arg (char)" (string-take-right "" #\a))
+(test-error "string-take-right invalid second arg (list)" (string-take-right "" '()))
+(test-error "string-take-right invalid second arg (vector)" (string-take-right "" '#()))
+(test-error "string-take-right invalid second arg (char set)" (string-take-right "" char-set:blank))
+(test-error "string-take-right invalid second arg (symbol)" (string-take-right "" 'foo))
+(test-error "string-take-right invalid second arg (procedure)" (string-take-right "" (lambda _ _)))
+(test-error "string-take-right invalid second arg (unspecified)" (string-take-right "" (if #f #f)))
+
+;; string-take-right out-of-bounds errors
+(test-error "string-take-right out of bounds arg (1)" (string-take-right "foo" -1))
+(test-error "string-take-right out of bounds arg (2)" (string-take-right "foo" 10))
+
+;; string-drop-right
+(test "string-drop-right (1)" "Beta " (string-drop-right "Beta rules" 5))
+(test "string-drop-right (2)" "Beta rules" (string-drop-right "Beta rules" 0))
+(test "string-drop-right (3)" ""      (string-drop-right "Beta rules" 10))
+(test "string-drop-right (4)" "" (string-drop-right "" 0))
+(test "string-drop-right (5)" "ab" (string-drop-right "abc" 1))
+(test "string-drop-right (6)" "a" (string-drop-right "abc" 2))
+(test "string-drop-right (7)" "" (string-drop-right "abc" 3))
+
+;; string-drop-right arity errors
+(test-error "string-drop-right arity error (1)" (string-drop-right))
+(test-error "string-drop-right arity error (2)" (string-drop-right ""))
+
+;; string-drop-right invalid argument type errors
+(test-error "string-drop-right invalid first arg (number)" (string-drop-right 0 0))
+(test-error "string-drop-right invalid first arg (boolean)" (string-drop-right #f 0))
+(test-error "string-drop-right invalid first arg (char)" (string-drop-right #\a 0))
+(test-error "string-drop-right invalid first arg (list)" (string-drop-right '() 0))
+(test-error "string-drop-right invalid first arg (vector)" (string-drop-right '#() 0))
+(test-error "string-drop-right invalid first arg (char set)" (string-drop-right char-set:blank 0))
+(test-error "string-drop-right invalid first arg (symbol)" (string-drop-right 'foo 0))
+(test-error "string-drop-right invalid first arg (procedure)" (string-drop-right (lambda _ _) 0))
+(test-error "string-drop-right invalid first arg (unspecified)" (string-drop-right (if #f #f) 0))
+
+(test-error "string-drop-right invalid second arg (string)" (string-drop-right "" ""))
+(test-error "string-drop-right invalid second arg (boolean)" (string-drop-right "" #f))
+(test-error "string-drop-right invalid second arg (char)" (string-drop-right "" #\a))
+(test-error "string-drop-right invalid second arg (list)" (string-drop-right "" '()))
+(test-error "string-drop-right invalid second arg (vector)" (string-drop-right "" '#()))
+(test-error "string-drop-right invalid second arg (char set)" (string-drop-right "" char-set:blank))
+(test-error "string-drop-right invalid second arg (symbol)" (string-drop-right "" 'foo))
+(test-error "string-drop-right invalid second arg (procedure)" (string-drop-right "" (lambda _ _)))
+(test-error "string-drop-right invalid second arg (unspecified)" (string-drop-right "" (if #f #f)))
+
+;; string-drop-right out-of-bounds errors
+(test-error "string-drop-right out of bounds arg (1)" (string-drop-right "foo" -1))
+(test-error "string-drop-right out of bounds arg (2)" (string-drop-right "foo" 10))
+
 
 (test "string-pad" "  325" (string-pad "325" 5))
 (test "string-pad" "71325" (string-pad "71325" 5))

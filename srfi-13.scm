@@ -1035,41 +1035,30 @@
 ;;; say what you want to trim.
 
 (define (string-take s n)
-;  (check-arg string? s string-take)
-;  (check-arg (lambda (val) (and (integer? n) (exact? n)
-;				(<= 0 n (string-length s))))
-;	     n string-take)
   (##sys#check-string s 'string-take)
   (##sys#check-range n 0 (fx+ 1 (##sys#size s)) 'string-take)
-  (%substring/shared s 0 n))
+  (##sys#substring s 0 n))
+
 
 (define (string-take-right s n)
-;  (check-arg string? s string-take-right)
   (##sys#check-string s 'string-take-right)
-  (##sys#check-range n 0 (fx+ 1 (##sys#size s)) 'string-take-right)
   (let ((len (##sys#size s)))
-;    (check-arg (lambda (val) (and (integer? n) (exact? n) (<= 0 n len)))
-;	       n string-take-right)
-    (%substring/shared s (fx- len n) len)))
+    (##sys#check-range n 0 (fx+ 1 len) 'string-take-right)
+    (##sys#substring s (fx- len n) len)))
+
 
 (define (string-drop s n)
-;  (check-arg string? s string-drop)
   (##sys#check-string s 'string-drop)
-  (##sys#check-range n 0 (fx+ 1 (##sys#size s)) 'string-drop)
   (let ((len (##sys#size s)))
-;    (check-arg (lambda (val) (and (integer? n) (exact? n) (<= 0 n len)))
-;	       n string-drop)
-    (%substring/shared s n len)))
+    (##sys#check-range n 0 (fx+ 1 len) 'string-drop)
+    (##sys#substring s n len)))
+
 
 (define (string-drop-right s n)
-;  (check-arg string? s string-drop-right)
   (##sys#check-string s 'string-drop-right)
-  (##sys#check-range n 0 (fx+ 1 (##sys#size s)) 'string-drop-right)
   (let ((len (##sys#size s)))
-;    (check-arg (lambda (val) (and (integer? n) (exact? n) (<= 0 n len)))
-;	       n string-drop-right)
-    (%substring/shared s 0 (fx- len n))))
-
+    (##sys#check-range n 0 (fx+ 1 len) 'string-drop-right)
+    (##sys#substring s 0 (fx- len n))))
 
 (define (string-trim s . criteria+start+end)
   (let-optionals* criteria+start+end ((criteria char-set:whitespace) rest)
