@@ -3,7 +3,7 @@
 
 (declare
   (unit srfi-13)
-  (uses srfi-14)
+  (uses srfi-14 data-structures)
   (fixnum)
   (hide %string-prefix? %string-hash %finish-string-concatenate-reverse %string-suffix-length %string-prefix-length
 	%string-map %string-copy! %string-compare %substring/shared %string-suffix? %multispan-repcopy!
@@ -669,9 +669,17 @@
 ;;; These are all simple derivatives of the previous counting funs.
 
 (define (string-prefix? s1 s2 . maybe-starts+ends)
-  (let-string-start+end2 (start1 end1 start2 end2) 
-			 string-prefix? s1 s2 maybe-starts+ends
-    (%string-prefix? s1 start1 end1 s2 start2 end2)))
+  (if (null? maybe-starts+ends)
+      (begin
+        (##sys#check-string s1 'string-prefix?)
+        (##sys#check-string s2 'string-prefix?)
+        (let ((len1 (string-length s1))
+              (len2 (string-length s2)))
+          (and (fx<= len1 len2)
+               (##core#inline "C_substring_compare" s1 s2 0 0 len1))))
+      (let-string-start+end2 (start1 end1 start2 end2)
+                             string-prefix? s1 s2 maybe-starts+ends
+        (%string-prefix? s1 start1 end1 s2 start2 end2))))
 
 (define (string-suffix? s1 s2 . maybe-starts+ends)
   (let-string-start+end2 (start1 end1 start2 end2) 
@@ -679,9 +687,17 @@
     (%string-suffix? s1 start1 end1 s2 start2 end2)))
 
 (define (string-prefix-ci? s1 s2 . maybe-starts+ends)
-  (let-string-start+end2 (start1 end1 start2 end2) 
-			 string-prefix-ci? s1 s2 maybe-starts+ends
-    (%string-prefix-ci? s1 start1 end1 s2 start2 end2)))
+  (if (null? maybe-starts+ends)
+      (begin
+        (##sys#check-string s1 'string-prefix-ci?)
+        (##sys#check-string s2 'string-prefix-ci?)
+        (let ((len1 (string-length s1))
+              (len2 (string-length s2)))
+          (and (fx<= len1 len2)
+               (##core#inline "C_substring_compare_case_insensitive" s1 s2 0 0 len1))))
+      (let-string-start+end2 (start1 end1 start2 end2)
+                             string-prefix-ci? s1 s2 maybe-starts+ends
+        (%string-prefix-ci? s1 start1 end1 s2 start2 end2))))
 
 (define (string-suffix-ci? s1 s2 . maybe-starts+ends)
   (let-string-start+end2 (start1 end1 start2 end2) 

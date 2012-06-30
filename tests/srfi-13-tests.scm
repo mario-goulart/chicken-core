@@ -28,6 +28,19 @@
     ((_ comment form)
      (test comment #t (and form #t)))))
 
+
+(define-record %error-indicator)
+(define error-indicator (make-%error-indicator))
+
+(define-syntax test-error
+  (syntax-rules ()
+    ((_ comment form)
+     (test comment
+           error-indicator
+           (handle-exceptions exn
+             error-indicator
+             form)))))
+
 (use srfi-13)
 
 ; Tests for SRFI-13 as implemented by the Gauche scheme system.
@@ -185,14 +198,66 @@
 (test "string-suffix-length-ci" 5
        (string-suffix-length-ci "CanCan" "cankancan"))
 
-(test "string-prefix?" #t    (string-prefix? "abcd" "abcdefg"))
-(test "string-prefix?" #f    (string-prefix? "abcf" "abcdefg"))
-(test "string-prefix-ci?" #t (string-prefix-ci? "abcd" "aBCDEfg"))
-(test "string-prefix-ci?" #f (string-prefix-ci? "abcf" "aBCDEfg"))
 (test "string-suffix?" #t    (string-suffix? "defg" "abcdefg"))
 (test "string-suffix?" #f    (string-suffix? "aefg" "abcdefg"))
 (test "string-suffix-ci?" #t (string-suffix-ci? "defg" "aBCDEfg"))
 (test "string-suffix-ci?" #f (string-suffix-ci? "aefg" "aBCDEfg"))
+
+
+;;; string-prefix?
+(test "string-prefix? (1)" #t    (string-prefix? "abcd" "abcdefg"))
+(test "string-prefix? (2)" #f    (string-prefix? "abcf" "abcdefg"))
+(test "string-prefix? (3)" #f    (string-prefix? "foobar" "foo"))
+(test "string-prefix? (4)" #t    (string-prefix? "foo" "foo"))
+
+(test "string-prefix-ci? (1)" #t (string-prefix-ci? "abcd" "aBCDEfg"))
+(test "string-prefix-ci? (2)" #f (string-prefix-ci? "abcf" "aBCDEfg"))
+(test "string-prefix-ci? (3)" #f (string-prefix-ci? "foobar" "foo"))
+(test "string-prefix-ci? (4)" #t (string-prefix-ci? "foo" "foo"))
+
+;; string-prefix? errors
+(test-error "string-prefix? arity (1)" (string-prefix?))
+(test-error "string-prefix? arity (2)" (string-prefix? "foo"))
+(test-error "string-prefix? invalid first arg (number)" (string-prefix? 0 "foo"))
+(test-error "string-prefix? invalid first arg (symbol)" (string-prefix? 'foo "foo"))
+(test-error "string-prefix? invalid first arg (vector)" (string-prefix? '#() "foo"))
+(test-error "string-prefix? invalid first arg (list)" (string-prefix? '() "foo"))
+(test-error "string-prefix? invalid first arg (char)" (string-prefix? #\a "foo"))
+(test-error "string-prefix? invalid first arg (boolean)" (string-prefix? #f "foo"))
+(test-error "string-prefix? invalid first arg (char set)" (string-prefix? char-set:blank "foo"))
+(test-error "string-prefix? invalid first arg (procedure)" (string-prefix? (lambda _ _) "foo"))
+(test-error "string-prefix? invalid first arg (unspecified)" (string-prefix? (if #f #f) "foo"))
+(test-error "string-prefix? invalid second arg (number)" (string-prefix? "foo" 0))
+(test-error "string-prefix? invalid second arg (symbol)" (string-prefix? "foo" 'foo))
+(test-error "string-prefix? invalid second arg (vector)" (string-prefix? "foo" '#()))
+(test-error "string-prefix? invalid second arg (list)" (string-prefix? "foo" '()))
+(test-error "string-prefix? invalid second arg (char)" (string-prefix? "foo" #\a))
+(test-error "string-prefix? invalid second arg (boolean)" (string-prefix? "foo" #f))
+(test-error "string-prefix? invalid second arg (char set)" (string-prefix? "foo" char-set:blank))
+(test-error "string-prefix? invalid second arg (procedure)" (string-prefix? "foo" (lambda _ _)))
+(test-error "string-prefix? invalid second arg (unspecified)" (string-prefix? "foo" (if #f #f)))
+
+;; string-prefix-ci? errors
+(test-error "string-prefix-ci? arity (1)" (string-prefix-ci?))
+(test-error "string-prefix-ci? arity (2)" (string-prefix-ci? "foo"))
+(test-error "string-prefix-ci? invalid first arg (number)" (string-prefix-ci? 0 "foo"))
+(test-error "string-prefix-ci? invalid first arg (symbol)" (string-prefix-ci? 'foo "foo"))
+(test-error "string-prefix-ci? invalid first arg (vector)" (string-prefix-ci? '#() "foo"))
+(test-error "string-prefix-ci? invalid first arg (list)" (string-prefix-ci? '() "foo"))
+(test-error "string-prefix-ci? invalid first arg (char)" (string-prefix-ci? #\a "foo"))
+(test-error "string-prefix-ci? invalid first arg (boolean)" (string-prefix-ci? #f "foo"))
+(test-error "string-prefix-ci? invalid first arg (char set)" (string-prefix-ci? char-set:blank "foo"))
+(test-error "string-prefix-ci? invalid first arg (procedure)" (string-prefix-ci? (lambda _ _) "foo"))
+(test-error "string-prefix-ci? invalid first arg (unspecified)" (string-prefix-ci? (if #f #f) "foo"))
+(test-error "string-prefix-ci? invalid second arg (number)" (string-prefix-ci? "foo" 0))
+(test-error "string-prefix-ci? invalid second arg (symbol)" (string-prefix-ci? "foo" 'foo))
+(test-error "string-prefix-ci? invalid second arg (vector)" (string-prefix-ci? "foo" '#()))
+(test-error "string-prefix-ci? invalid second arg (list)" (string-prefix-ci? "foo" '()))
+(test-error "string-prefix-ci? invalid second arg (char)" (string-prefix-ci? "foo" #\a))
+(test-error "string-prefix-ci? invalid second arg (boolean)" (string-prefix-ci? "foo" #f))
+(test-error "string-prefix-ci? invalid second arg (char set)" (string-prefix-ci? "foo" char-set:blank))
+(test-error "string-prefix-ci? invalid second arg (procedure)" (string-prefix-ci? "foo" (lambda _ _)))
+(test-error "string-prefix-ci? invalid second arg (unspecified)" (string-prefix-ci? "foo" (if #f #f)))
 
 (test "string-index #1" 4
        (string-index "abcd:efgh:ijkl" #\:))
