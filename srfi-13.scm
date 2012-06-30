@@ -180,17 +180,17 @@
 	(let ((start (car args))
 	      (args (cdr args)))
 ;	  (if (and (integer? start) (exact? start) (>= start 0))
-	  (if (and (fixnum? start) (>= start 0))
+	  (if (and (fixnum? start) (fx>= start 0))
 	      (receive (end args)
 		  (if (pair? args)
 		      (let ((end (car args))
 			    (args (cdr args)))
 ;			(if (and (integer? end) (exact? end) (<= end slen))
-			(if (and (fixnum? end) (<= end slen))
+			(if (and (fixnum? end) (fx<= end slen))
 			    (values end args)
 			    (##sys#error 'string-parse-start+end "Illegal substring END spec" proc end s)))
 		      (values slen args))
-		(if (<= start end) (values args start end)
+		(if (fx<= start end) (values args start end)
 		    (##sys#error 'string-parse-start+end "Illegal substring START/END spec"
 			   proc start end s)))
 	      (##sys#error 'string-parse-start+end "Illegal substring START spec" proc start s)))
@@ -210,9 +210,9 @@
 ;       (exact? end)
        (fixnum? start)
        (fixnum? end)
-       (<= 0 start)
-       (<= start end)
-       (<= end (string-length s))))
+       (fx<= 0 start)
+       (fx<= start end)
+       (fx<= end (string-length s))))
 
 (define (check-substring-spec proc s start end)
   (if (not (substring-spec-ok? s start end))
@@ -261,7 +261,7 @@
 ;;; Split out so that other routines in this library can avoid arg-parsing
 ;;; overhead for END parameter.
 (define (%substring/shared s start end)
-  (if (and (zero? start) (= end (string-length s))) s
+  (if (and (zero? start) (fx= end (string-length s))) s
       (##sys#substring s start end)))
 
 (define (string-copy s . maybe-start+end)
@@ -304,11 +304,11 @@
     (%string-map proc s start end)))
 
 (define (%string-map proc s start end)	; Internal utility
-  (let* ((len (- end start))
+  (let* ((len (fx- end start))
 	 (ans (make-string len)))
-    (do ((i 0 (+ i 1))
-	 (j start (+ j 1)))
-	((>= i len))
+    (do ((i 0 (fx+ i 1))
+	 (j start (fx+ j 1)))
+	((fx>= i len))
       (string-set! ans i (proc (string-ref s j))))
     ans))
 
@@ -318,22 +318,22 @@
     (%string-map! proc s start end)))
 
 (define (%string-map! proc s start end)
-  (do ((i start (+ i 1)))
-      ((>= i end) s)
+  (do ((i start (fx+ i 1)))
+      ((fx>= i end) s)
     (string-set! s i (proc (string-ref s i)))))
 
 (define (string-fold kons knil s . maybe-start+end)
 ;  (check-arg procedure? kons string-fold)
   (let-string-start+end (start end) string-fold s maybe-start+end
     (let lp ((v knil) (i start))
-      (if (< i end) (lp (kons (string-ref s i) v) (+ i 1))
+      (if (fx< i end) (lp (kons (string-ref s i) v) (fx+ i 1))
 	  v))))
 
 (define (string-fold-right kons knil s . maybe-start+end)
 ;  (check-arg procedure? kons string-fold-right)
   (let-string-start+end (start end) string-fold-right s maybe-start+end
-    (let lp ((v knil) (i (- end 1)))
-      (if (>= i start) (lp (kons (string-ref s i) v) (- i 1))
+    (let lp ((v knil) (i (fx- end 1)))
+      (if (fx>= i start) (lp (kons (string-ref s i) v) (fx- i 1))
 	  v))))
 
 ;;; (string-unfold p f g seed [base make-final])
@@ -416,15 +416,15 @@
 	(if (not (p seed))
 	    (let ((c (f seed))
 		  (seed (g seed)))
-	      (if (< i chunk-len)
+	      (if (fx< i chunk-len)
 		  (begin (string-set! chunk i c)
-			 (lp2 (+ i 1) seed))
+			 (lp2 (fx+ i 1) seed))
 
-		  (let* ((nchars2 (+ chunk-len nchars))
+		  (let* ((nchars2 (fx+ chunk-len nchars))
 			 (chunk-len2 (min 4096 nchars2))
 			 (new-chunk (make-string chunk-len2)))
 		    (string-set! new-chunk 0 c)
-		    (lp (cons chunk chunks) (+ nchars chunk-len)
+		    (lp (cons chunk chunks) (fx+ nchars chunk-len)
 			new-chunk chunk-len2 1 seed))))
 
 	    ;; We're done. Make the answer string & install the bits.
@@ -432,16 +432,16 @@
 		   (flen (string-length final))
 		   (base-len (string-length base))
 		   (j (+ base-len nchars i))
-		   (ans (make-string (+ j flen))))
+		   (ans (make-string (fx+ j flen))))
 	      (%string-copy! ans j final 0 flen)	; Install FINAL.
-	      (let ((j (- j i)))
+	      (let ((j (fx- j i)))
 		(%string-copy! ans j chunk 0 i)		; Install CHUNK[0,I).
 		(let lp ((j j) (chunks chunks))		; Install CHUNKS.
 		  (if (pair? chunks)
 		      (let* ((chunk  (car chunks))
 			     (chunks (cdr chunks))
 			     (chunk-len (string-length chunk))
-			     (j (- j chunk-len)))
+			     (j (fx- j chunk-len)))
 			(%string-copy! ans j chunk 0 chunk-len)
 			(lp j chunks)))))
 	      (%string-copy! ans 0 base 0 base-len)	; Install BASE.
@@ -461,36 +461,36 @@
 	(if (not (p seed))		; to left.
 	    (let ((c (f seed))
 		  (seed (g seed)))
-	      (if (> i 0)
-		  (let ((i (- i 1)))
+	      (if (fx> i 0)
+		  (let ((i (fx- i 1)))
 		    (string-set! chunk i c)
 		    (lp2 i seed))
 
-		  (let* ((nchars2 (+ chunk-len nchars))
+		  (let* ((nchars2 (fx+ chunk-len nchars))
 			 (chunk-len2 (min 4096 nchars2))
 			 (new-chunk (make-string chunk-len2))
-			 (i (- chunk-len2 1)))
+			 (i (fx- chunk-len2 1)))
 		    (string-set! new-chunk i c)
-		    (lp (cons chunk chunks) (+ nchars chunk-len)
+		    (lp (cons chunk chunks) (fx+ nchars chunk-len)
 			new-chunk chunk-len2 i seed))))
 
 	    ;; We're done. Make the answer string & install the bits.
 	    (let* ((final (make-final seed))
 		   (flen (string-length final))
 		   (base-len (string-length base))
-		   (chunk-used (- chunk-len i))
+		   (chunk-used (fx- chunk-len i))
 		   (j (+ base-len nchars chunk-used))
-		   (ans (make-string (+ j flen))))
+		   (ans (make-string (fx+ j flen))))
 	      (%string-copy! ans 0 final 0 flen)	; Install FINAL.
 	      (%string-copy! ans flen chunk i chunk-len); Install CHUNK[I,).
-	      (let lp ((j (+ flen chunk-used))		; Install CHUNKS.
+	      (let lp ((j (fx+ flen chunk-used))		; Install CHUNKS.
 		       (chunks chunks))		
 		  (if (pair? chunks)
 		      (let* ((chunk  (car chunks))
 			     (chunks (cdr chunks))
 			     (chunk-len (string-length chunk)))
 			(%string-copy! ans j chunk 0 chunk-len)
-			(lp (+ j chunk-len) chunks))
+			(lp (fx+ j chunk-len) chunks))
 		      (%string-copy! ans j base 0 base-len))); Install BASE.
 	      ans))))))
 
@@ -499,36 +499,36 @@
 ;  (check-arg procedure? proc string-for-each)
   (let-string-start+end (start end) string-for-each s maybe-start+end
     (let lp ((i start))
-      (if (< i end)
+      (if (fx< i end)
 	  (begin (proc (string-ref s i)) 
-		 (lp (+ i 1)))))))
+		 (lp (fx+ i 1)))))))
 
 (define (string-for-each-index proc s . maybe-start+end)
 ;  (check-arg procedure? proc string-for-each-index)
   (let-string-start+end (start end) string-for-each-index s maybe-start+end
     (let lp ((i start))
-      (if (< i end) (begin (proc i) (lp (+ i 1)))))))
+      (if (fx< i end) (begin (proc i) (lp (fx+ i 1)))))))
 
 (define (string-every criteria s . maybe-start+end)
   (let-string-start+end (start end) string-every s maybe-start+end
     (cond ((char? criteria)
 	   (let lp ((i start))
-	     (or (>= i end)
+	     (or (fx>= i end)
 		 (and (char=? criteria (string-ref s i))
-		      (lp (+ i 1))))))
+		      (lp (fx+ i 1))))))
 
 	  ((char-set? criteria)
 	   (let lp ((i start))
-	     (or (>= i end)
+	     (or (fx>= i end)
 		 (and (char-set-contains? criteria (string-ref s i))
-		      (lp (+ i 1))))))
+		      (lp (fx+ i 1))))))
 
 	  ((procedure? criteria)		; Slightly funky loop so that
-	   (or (= start end)			; final (PRED S[END-1]) call
+	   (or (fx= start end)			; final (PRED S[END-1]) call
 	       (let lp ((i start))		; is a tail call.
 		 (let ((c (string-ref s i))
-		       (i1 (+ i 1)))
-		   (if (= i1 end) (criteria c)	; Tail call.
+		       (i1 (fx+ i 1)))
+		   (if (fx= i1 end) (criteria c)	; Tail call.
 		       (and (criteria c) (lp i1)))))))
 
 	  (else (##sys#error 'string-every "Second param is neither char-set, char, or predicate procedure."
@@ -539,22 +539,22 @@
   (let-string-start+end (start end) string-any s maybe-start+end
     (cond ((char? criteria)
 	   (let lp ((i start))
-	     (and (< i end)
+	     (and (fx< i end)
 		  (or (char=? criteria (string-ref s i))
-		      (lp (+ i 1))))))
+		      (lp (fx+ i 1))))))
 
 	  ((char-set? criteria)
 	   (let lp ((i start))
-	     (and (< i end)
+	     (and (fx< i end)
 		  (or (char-set-contains? criteria (string-ref s i))
-		      (lp (+ i 1))))))
+		      (lp (fx+ i 1))))))
 
 	  ((procedure? criteria)		; Slightly funky loop so that
-	   (and (< start end)			; final (PRED S[END-1]) call
+	   (and (fx< start end)			; final (PRED S[END-1]) call
 		(let lp ((i start))		; is a tail call.
 		  (let ((c (string-ref s i))
-			(i1 (+ i 1)))
-		    (if (= i1 end) (criteria c)	; Tail call
+			(i1 (fx+ i 1)))
+		    (if (fx= i1 end) (criteria c)	; Tail call
 			(or (criteria c) (lp i1)))))))
 
 	  (else (##sys#error 'string-any "Second param is neither char-set, char, or predicate procedure."
@@ -567,8 +567,8 @@
 ;	     len string-tabulate)
   (##sys#check-exact len 'string-tabulate)
   (let ((s (make-string len)))
-    (do ((i (- len 1) (- i 1)))
-	((< i 0))
+    (do ((i (fx- len 1) (fx- i 1)))
+	((fx< i 0))
       (string-set! s i (proc i)))
     s))
 
@@ -584,60 +584,60 @@
 ;;; so should be as tense as possible.
 
 (define (%string-prefix-length s1 start1 end1 s2 start2 end2)
-  (let* ((delta (min (- end1 start1) (- end2 start2)))
-	 (end1 (+ start1 delta)))
+  (let* ((delta (min (fx- end1 start1) (fx- end2 start2)))
+	 (end1 (fx+ start1 delta)))
 
-    (if (and (eq? s1 s2) (= start1 start2))	; EQ fast path
+    (if (and (eq? s1 s2) (fx= start1 start2))	; EQ fast path
 	delta
 
 	(let lp ((i start1) (j start2))		; Regular path
-	  (if (or (>= i end1)
+	  (if (or (fx>= i end1)
 		  (not (char=? (string-ref s1 i)
 			       (string-ref s2 j))))
-	      (- i start1)
-	      (lp (+ i 1) (+ j 1)))))))
+	      (fx- i start1)
+	      (lp (fx+ i 1) (fx+ j 1)))))))
 
 (define (%string-suffix-length s1 start1 end1 s2 start2 end2)
-  (let* ((delta (min (- end1 start1) (- end2 start2)))
-	 (start1 (- end1 delta)))
+  (let* ((delta (min (fx- end1 start1) (fx- end2 start2)))
+	 (start1 (fx- end1 delta)))
 
-    (if (and (eq? s1 s2) (= end1 end2))		; EQ fast path
+    (if (and (eq? s1 s2) (fx= end1 end2))		; EQ fast path
 	delta
 
-	(let lp ((i (- end1 1)) (j (- end2 1)))	; Regular path
-	  (if (or (< i start1)
+	(let lp ((i (fx- end1 1)) (j (fx- end2 1)))	; Regular path
+	  (if (or (fx< i start1)
 		  (not (char=? (string-ref s1 i)
 			       (string-ref s2 j))))
-	      (- (- end1 i) 1)
-	      (lp (- i 1) (- j 1)))))))
+	      (fx- (fx- end1 i) 1)
+	      (lp (fx- i 1) (fx- j 1)))))))
 
 (define (%string-prefix-length-ci s1 start1 end1 s2 start2 end2)
-  (let* ((delta (min (- end1 start1) (- end2 start2)))
-	 (end1 (+ start1 delta)))
+  (let* ((delta (min (fx- end1 start1) (fx- end2 start2)))
+	 (end1 (fx+ start1 delta)))
 
-    (if (and (eq? s1 s2) (= start1 start2))	; EQ fast path
+    (if (and (eq? s1 s2) (fx= start1 start2))	; EQ fast path
 	delta
 
 	(let lp ((i start1) (j start2))		; Regular path
-	  (if (or (>= i end1)
+	  (if (or (fx>= i end1)
 		  (not (char-ci=? (string-ref s1 i)
 				  (string-ref s2 j))))
-	      (- i start1)
-	      (lp (+ i 1) (+ j 1)))))))
+	      (fx- i start1)
+	      (lp (fx+ i 1) (fx+ j 1)))))))
 
 (define (%string-suffix-length-ci s1 start1 end1 s2 start2 end2)
-  (let* ((delta (min (- end1 start1) (- end2 start2)))
-	 (start1 (- end1 delta)))
+  (let* ((delta (min (fx- end1 start1) (fx- end2 start2)))
+	 (start1 (fx- end1 delta)))
 
-    (if (and (eq? s1 s2) (= end1 end2))		; EQ fast path
+    (if (and (eq? s1 s2) (fx= end1 end2))		; EQ fast path
 	delta
 
-	(let lp ((i (- end1 1)) (j (- end2 1)))	; Regular path
-	  (if (or (< i start1)
+	(let lp ((i (fx- end1 1)) (j (fx- end2 1)))	; Regular path
+	  (if (or (fx< i start1)
 		  (not (char-ci=? (string-ref s1 i)
 				  (string-ref s2 j))))
-	      (- (- end1 i) 1)
-	      (lp (- i 1) (- j 1)))))))
+	      (fx- (fx- end1 i) 1)
+	      (lp (fx- i 1) (fx- j 1)))))))
 
 
 (define (string-prefix-length s1 s2 . maybe-starts+ends)
@@ -692,28 +692,28 @@
 ;;; Here are the internal routines that do the real work.
 
 (define (%string-prefix? s1 start1 end1 s2 start2 end2)
-  (let ((len1 (- end1 start1)))
-    (and (<= len1 (- end2 start2))	; Quick check
-	 (= (%string-prefix-length s1 start1 end1
+  (let ((len1 (fx- end1 start1)))
+    (and (fx<= len1 (fx- end2 start2))	; Quick check
+	 (fx= (%string-prefix-length s1 start1 end1
 				   s2 start2 end2)
 	    len1))))
 
 (define (%string-suffix? s1 start1 end1 s2 start2 end2)
-  (let ((len1 (- end1 start1)))
-    (and (<= len1 (- end2 start2))	; Quick check
-	 (= len1 (%string-suffix-length s1 start1 end1
+  (let ((len1 (fx- end1 start1)))
+    (and (fx<= len1 (fx- end2 start2))	; Quick check
+	 (fx= len1 (%string-suffix-length s1 start1 end1
 					s2 start2 end2)))))
 
 (define (%string-prefix-ci? s1 start1 end1 s2 start2 end2)
-  (let ((len1 (- end1 start1)))
-    (and (<= len1 (- end2 start2))	; Quick check
-	 (= len1 (%string-prefix-length-ci s1 start1 end1
+  (let ((len1 (fx- end1 start1)))
+    (and (fx<= len1 (fx- end2 start2))	; Quick check
+	 (fx= len1 (%string-prefix-length-ci s1 start1 end1
 					   s2 start2 end2)))))
 
 (define (%string-suffix-ci? s1 start1 end1 s2 start2 end2)
-  (let ((len1 (- end1 start1)))
-    (and (<= len1 (- end2 start2))	; Quick check
-	 (= len1 (%string-suffix-length-ci s1 start1 end1
+  (let ((len1 (fx- end1 start1)))
+    (and (fx<= len1 (fx- end2 start2))	; Quick check
+	 (fx= len1 (%string-suffix-length-ci s1 start1 end1
 					   s2 start2 end2)))))
 
 
@@ -727,30 +727,30 @@
 
 (define (%string-compare s1 start1 end1 s2 start2 end2
 			   proc< proc= proc>)
-  (let ((size1 (- end1 start1))
-	(size2 (- end2 start2)))
+  (let ((size1 (fx- end1 start1))
+	(size2 (fx- end2 start2)))
     (let ((match (%string-prefix-length s1 start1 end1 s2 start2 end2)))
-      (if (= match size1)
-	  ((if (= match size2) proc= proc<) end1)
-	  ((if (= match size2)
+      (if (fx= match size1)
+	  ((if (fx= match size2) proc= proc<) end1)
+	  ((if (fx= match size2)
 	       proc>
-	       (if (char<? (string-ref s1 (+ start1 match))
-			   (string-ref s2 (+ start2 match)))
+	       (if (char<? (string-ref s1 (fx+ start1 match))
+			   (string-ref s2 (fx+ start2 match)))
 		   proc< proc>))
-	   (+ match start1))))))
+	   (fx+ match start1))))))
 
 (define (%string-compare-ci s1 start1 end1 s2 start2 end2
 			      proc< proc= proc>)
-  (let ((size1 (- end1 start1))
-	(size2 (- end2 start2)))
+  (let ((size1 (fx- end1 start1))
+	(size2 (fx- end2 start2)))
     (let ((match (%string-prefix-length-ci s1 start1 end1 s2 start2 end2)))
-      (if (= match size1)
-	  ((if (= match size2) proc= proc<) end1)
-	  ((if (= match size2) proc>
-	       (if (char-ci<? (string-ref s1 (+ start1 match))
-			      (string-ref s2 (+ start2 match)))
+      (if (fx= match size1)
+	  ((if (fx= match size2) proc= proc<) end1)
+	  ((if (fx= match size2) proc>
+	       (if (char-ci<? (string-ref s1 (fx+ start1 match))
+			      (string-ref s2 (fx+ start2 match)))
 		   proc< proc>))
-	   (+ start1 match))))))
+	   (fx+ start1 match))))))
 
 (define (string-compare s1 s2 proc< proc= proc> . maybe-starts+ends)
 ;  (check-arg procedure? proc< string-compare)
@@ -780,8 +780,8 @@
 (define (string= s1 s2 . maybe-starts+ends)
   (let-string-start+end2 (start1 end1 start2 end2) 
 			 string= s1 s2 maybe-starts+ends
-    (and (= (- end1 start1) (- end2 start2))			; Quick filter
-	 (or (and (eq? s1 s2) (= start1 start2))		; Fast path
+    (and (fx= (fx- end1 start1) (fx- end2 start2))			; Quick filter
+	 (or (and (eq? s1 s2) (fx= start1 start2))		; Fast path
 	     (%string-compare s1 start1 end1 s2 start2 end2	; Real test
 			      (lambda (i) #f)
 			      (lambda (i) (if i #t #f))
@@ -790,8 +790,8 @@
 (define (string<> s1 s2 . maybe-starts+ends)
   (let-string-start+end2 (start1 end1 start2 end2) 
 			 string<> s1 s2 maybe-starts+ends
-    (or (not (= (- end1 start1) (- end2 start2)))		; Fast path
-	(and (not (and (eq? s1 s2) (= start1 start2)))		; Quick filter
+    (or (not (fx= (fx- end1 start1) (fx- end2 start2)))		; Fast path
+	(and (not (and (eq? s1 s2) (fx= start1 start2)))		; Quick filter
 	     (%string-compare s1 start1 end1 s2 start2 end2	; Real test
 			      (lambda (i) (if i #t #f))
 			      (lambda (i) #f)
@@ -800,8 +800,8 @@
 (define (string< s1 s2 . maybe-starts+ends)
   (let-string-start+end2 (start1 end1 start2 end2) 
 			 string< s1 s2 maybe-starts+ends
-    (if (and (eq? s1 s2) (= start1 start2))			; Fast path
-	(< end1 end2)
+    (if (and (eq? s1 s2) (fx= start1 start2))			; Fast path
+	(fx< end1 end2)
 
 	(%string-compare s1 start1 end1 s2 start2 end2 		; Real test
 			 (lambda (i) (if i #t #f))
@@ -811,8 +811,8 @@
 (define (string> s1 s2 . maybe-starts+ends)
   (let-string-start+end2 (start1 end1 start2 end2) 
 			 string> s1 s2 maybe-starts+ends
-    (if (and (eq? s1 s2) (= start1 start2))			; Fast path
-	(> end1 end2)
+    (if (and (eq? s1 s2) (fx= start1 start2))			; Fast path
+	(fx> end1 end2)
 
 	(%string-compare s1 start1 end1 s2 start2 end2 		; Real test
 			 (lambda (i) #f)
@@ -822,8 +822,8 @@
 (define (string<= s1 s2 . maybe-starts+ends)
   (let-string-start+end2 (start1 end1 start2 end2) 
 			 string<= s1 s2 maybe-starts+ends
-    (if (and (eq? s1 s2) (= start1 start2))			; Fast path
-	(<= end1 end2)
+    (if (and (eq? s1 s2) (fx= start1 start2))			; Fast path
+	(fx<= end1 end2)
 
 	(%string-compare s1 start1 end1 s2 start2 end2 		; Real test
 			 (lambda (i) (if i #t #f))
@@ -833,8 +833,8 @@
 (define (string>= s1 s2 . maybe-starts+ends)
   (let-string-start+end2 (start1 end1 start2 end2) 
 			 string>= s1 s2 maybe-starts+ends
-    (if (and (eq? s1 s2) (= start1 start2))			; Fast path
-	(>= end1 end2)
+    (if (and (eq? s1 s2) (fx= start1 start2))			; Fast path
+	(fx>= end1 end2)
 
 	(%string-compare s1 start1 end1 s2 start2 end2 		; Real test
 			 (lambda (i) #f)
@@ -844,8 +844,8 @@
 (define (string-ci= s1 s2 . maybe-starts+ends)
   (let-string-start+end2 (start1 end1 start2 end2) 
 			 string-ci= s1 s2 maybe-starts+ends
-    (and (= (- end1 start1) (- end2 start2))			; Quick filter
-	 (or (and (eq? s1 s2) (= start1 start2))		; Fast path
+    (and (fx= (fx- end1 start1) (fx- end2 start2))			; Quick filter
+	 (or (and (eq? s1 s2) (fx= start1 start2))		; Fast path
 	     (%string-compare-ci s1 start1 end1 s2 start2 end2	; Real test
 				 (lambda (i) #f)
 				 (lambda (i) (if i #t #f))
@@ -854,8 +854,8 @@
 (define (string-ci<> s1 s2 . maybe-starts+ends)
   (let-string-start+end2 (start1 end1 start2 end2) 
 			 string-ci<> s1 s2 maybe-starts+ends
-    (or (not (= (- end1 start1) (- end2 start2)))		; Fast path
-	(and (not (and (eq? s1 s2) (= start1 start2)))		; Quick filter
+    (or (not (fx= (fx- end1 start1) (fx- end2 start2)))		; Fast path
+	(and (not (and (eq? s1 s2) (fx= start1 start2)))		; Quick filter
 	     (%string-compare-ci s1 start1 end1 s2 start2 end2	; Real test
 				 (lambda (i) (if i #t #f))
 				 (lambda (i) #f)
@@ -864,8 +864,8 @@
 (define (string-ci< s1 s2 . maybe-starts+ends)
   (let-string-start+end2 (start1 end1 start2 end2) 
 			 string-ci< s1 s2 maybe-starts+ends
-    (if (and (eq? s1 s2) (= start1 start2))			; Fast path
-	(< end1 end2)
+    (if (and (eq? s1 s2) (fx= start1 start2))			; Fast path
+	(fx< end1 end2)
 
 	(%string-compare-ci s1 start1 end1 s2 start2 end2	; Real test
 			    (lambda (i) (if i #t #f))
@@ -875,8 +875,8 @@
 (define (string-ci> s1 s2 . maybe-starts+ends)
   (let-string-start+end2 (start1 end1 start2 end2) 
 			 string-ci> s1 s2 maybe-starts+ends
-    (if (and (eq? s1 s2) (= start1 start2))			; Fast path
-	(> end1 end2)
+    (if (and (eq? s1 s2) (fx= start1 start2))			; Fast path
+	(fx> end1 end2)
 
 	(%string-compare-ci s1 start1 end1 s2 start2 end2	; Real test
 			    (lambda (i) #f)
@@ -886,8 +886,8 @@
 (define (string-ci<= s1 s2 . maybe-starts+ends)
   (let-string-start+end2 (start1 end1 start2 end2) 
 			 string-ci<= s1 s2 maybe-starts+ends
-    (if (and (eq? s1 s2) (= start1 start2))			; Fast path
-	(<= end1 end2)
+    (if (and (eq? s1 s2) (fx= start1 start2))			; Fast path
+	(fx<= end1 end2)
 
 	(%string-compare-ci s1 start1 end1 s2 start2 end2	; Real test
 			    (lambda (i) (if i #t #f))
@@ -897,8 +897,8 @@
 (define (string-ci>= s1 s2 . maybe-starts+ends)
   (let-string-start+end2 (start1 end1 start2 end2) 
 			 string-ci>= s1 s2 maybe-starts+ends
-    (if (and (eq? s1 s2) (= start1 start2))			; Fast path
-	(>= end1 end2)
+    (if (and (eq? s1 s2) (fx= start1 start2))			; Fast path
+	(fx>= end1 end2)
 
 	(%string-compare-ci s1 start1 end1 s2 start2 end2	; Real test
 			    (lambda (i) #f)
@@ -923,10 +923,10 @@
   (let ((iref (lambda (s i) (char->int (string-ref s i))))
 	;; Compute a 111...1 mask that will cover BOUND-1:
 	(mask (let lp ((i #x10000)) ; Let's skip first 16 iterations, eh?
-		(if (>= i bound) (- i 1) (lp (+ i i))))))
+		(if (fx>= i bound) (fx- i 1) (lp (fx+ i i))))))
     (let lp ((i start) (ans 0))
-      (if (>= i end) (modulo ans bound)
-	  (lp (+ i 1) (fxand mask (+ (* 37 ans) (iref s i))))))))
+      (if (fx>= i end) (modulo ans bound)
+	  (lp (fx+ i 1) (fxand mask (fx+ (fx* 37 ans) (iref s i))))))))
 
 (define (string-hash s . maybe-bound+start+end)
   (let-optionals* maybe-bound+start+end ((bound 4194304); (and (integer? bound)
@@ -982,11 +982,11 @@
     (cond ((string-index s char-cased? i end) =>
            (lambda (i)
 	     (string-set! s i (char-titlecase (string-ref s i)))
-	     (let ((i1 (+ i 1)))
+	     (let ((i1 (fx+ i 1)))
 	       (cond ((string-skip s char-cased? i1 end) =>
 		      (lambda (j)
 			(string-downcase! s i1 j)
-			(lp (+ j 1))))
+			(lp (fx+ j 1))))
 		     (else (string-downcase! s i1 end)))))))))
 
 (define (string-titlecase! s . maybe-start+end)
@@ -996,7 +996,7 @@
 (define (string-titlecase s . maybe-start+end)
   (let-string-start+end (start end) string-titlecase! s maybe-start+end
     (let ((ans (##sys#substring s start end)))
-      (%string-titlecase! ans 0 (- end start))
+      (%string-titlecase! ans 0 (fx- end start))
       ans)))
 
 
@@ -1034,7 +1034,7 @@
   (let ((len (##sys#size s)))
 ;    (check-arg (lambda (val) (and (integer? n) (exact? n) (<= 0 n len)))
 ;	       n string-take-right)
-    (%substring/shared s (- len n) len)))
+    (%substring/shared s (fx- len n) len)))
 
 (define (string-drop s n)
 ;  (check-arg string? s string-drop)
@@ -1052,7 +1052,7 @@
   (let ((len (##sys#size s)))
 ;    (check-arg (lambda (val) (and (integer? n) (exact? n) (<= 0 n len)))
 ;	       n string-drop-right)
-    (%substring/shared s 0 (- len n))))
+    (%substring/shared s 0 (fx- len n))))
 
 
 (define (string-trim s . criteria+start+end)
@@ -1066,7 +1066,7 @@
   (let-optionals* criteria+start+end ((criteria char-set:whitespace) rest)
     (let-string-start+end (start end) string-trim-right s rest
       (cond ((string-skip-right s criteria start end) =>
-	     (lambda (i) (%substring/shared s start (+ 1 i))))
+	     (lambda (i) (%substring/shared s start (fx+ 1 i))))
 	    (else "")))))
 
 (define (string-trim-both s . criteria+start+end)
@@ -1074,7 +1074,7 @@
     (let-string-start+end (start end) string-trim-both s rest
       (cond ((string-skip s criteria start end) =>
 	     (lambda (i)
-	       (%substring/shared s i (+ 1 (string-skip-right s criteria i end)))))
+	       (%substring/shared s i (fx+ 1 (string-skip-right s criteria i end)))))
 	    (else "")))))
 
 
@@ -1082,9 +1082,9 @@
   (##sys#check-exact n 'string-pad-right)
   (let-optionals* char+start+end ((char #\space) rest) ; (char? char)) rest)
     (let-string-start+end (start end) string-pad-right s rest
-      (let ((len (- end start)))
-	(if (<= n len)
-	    (%substring/shared s start (+ start n))
+      (let ((len (fx- end start)))
+	(if (fx<= n len)
+	    (%substring/shared s start (fx+ start n))
 	    (let ((ans (make-string n char)))
 	      (%string-copy! ans 0 s start end)
 	      ans))))))
@@ -1093,11 +1093,11 @@
   (##sys#check-exact n 'string-pad)
   (let-optionals* char+start+end ((char #\space) rest) ; (char? char)) rest)
     (let-string-start+end (start end) string-pad s rest
-      (let ((len (- end start)))
-	(if (<= n len)
-	    (%substring/shared s (- end n) end)
+      (let ((len (fx- end start)))
+	(if (fx<= n len)
+	    (%substring/shared s (fx- end n) end)
 	    (let ((ans (make-string n char)))
-	      (%string-copy! ans (- n len) s start end)
+	      (%string-copy! ans (fx- n len) s start end)
 	      ans))))))
 
 
@@ -1119,55 +1119,55 @@
 (define (string-delete criteria s . maybe-start+end)
   (let-string-start+end (start end) string-delete s maybe-start+end
     (if (procedure? criteria)
-	(let* ((slen (- end start))
+	(let* ((slen (fx- end start))
 	       (temp (make-string slen))
 	       (ans-len (string-fold (lambda (c i)
 				       (if (criteria c) i
 					   (begin (string-set! temp i c)
-						  (+ i 1))))
+						  (fx+ i 1))))
 				     0 s start end)))
-	  (if (= ans-len slen) temp (##sys#substring temp 0 ans-len)))
+	  (if (fx= ans-len slen) temp (##sys#substring temp 0 ans-len)))
 
 	(let* ((cset (cond ((char-set? criteria) criteria)
 			   ((char? criteria) (char-set criteria))
 			   (else (##sys#error 'string-delete "string-delete criteria not predicate, char or char-set" criteria))))
 	       (len (string-fold (lambda (c i) (if (char-set-contains? cset c)
 						   i
-						   (+ i 1)))
+						   (fx+ i 1)))
 				 0 s start end))
 	       (ans (make-string len)))
 	  (string-fold (lambda (c i) (if (char-set-contains? cset c)
 					 i
 					 (begin (string-set! ans i c)
-						(+ i 1))))
+						(fx+ i 1))))
 		       0 s start end)
 	  ans))))
 
 (define (string-filter criteria s . maybe-start+end)
   (let-string-start+end (start end) string-filter s maybe-start+end
     (if (procedure? criteria)
-	(let* ((slen (- end start))
+	(let* ((slen (fx- end start))
 	       (temp (make-string slen))
 	       (ans-len (string-fold (lambda (c i)
 				       (if (criteria c)
 					   (begin (string-set! temp i c)
-						  (+ i 1))
+						  (fx+ i 1))
 					   i))
 				     0 s start end)))
-	  (if (= ans-len slen) temp (##sys#substring temp 0 ans-len)))
+	  (if (fx= ans-len slen) temp (##sys#substring temp 0 ans-len)))
 
 	(let* ((cset (cond ((char-set? criteria) criteria)
 			   ((char? criteria) (char-set criteria))
 			   (else (##sys#error 'string-filter "string-delete criteria not predicate, char or char-set" criteria))))
 
 	       (len (string-fold (lambda (c i) (if (char-set-contains? cset c)
-						   (+ i 1)
+						   (fx+ i 1)
 						   i))
 				 0 s start end))
 	       (ans (make-string len)))
 	  (string-fold (lambda (c i) (if (char-set-contains? cset c)
 					 (begin (string-set! ans i c)
-						(+ i 1))
+						(fx+ i 1))
 					 i))
 		       0 s start end)
 	  ans))))
@@ -1188,39 +1188,39 @@
   (let-string-start+end (start end) string-index str maybe-start+end
     (cond ((char? criteria)
 	   (let lp ((i start))
-	     (and (< i end)
+	     (and (fx< i end)
 		  (if (char=? criteria (string-ref str i)) i
-		      (lp (+ i 1))))))
+		      (lp (fx+ i 1))))))
 	  ((char-set? criteria)
 	   (let lp ((i start))
-	     (and (< i end)
+	     (and (fx< i end)
 		  (if (char-set-contains? criteria (string-ref str i)) i
-		      (lp (+ i 1))))))
+		      (lp (fx+ i 1))))))
 	  ((procedure? criteria)
 	   (let lp ((i start))
-	     (and (< i end)
+	     (and (fx< i end)
 		  (if (criteria (string-ref str i)) i
-		      (lp (+ i 1))))))
+		      (lp (fx+ i 1))))))
 	  (else (##sys#error 'string-index "Second param is neither char-set, char, or predicate procedure."
 		       string-index criteria)))))
 
 (define (string-index-right str criteria . maybe-start+end)
   (let-string-start+end (start end) string-index-right str maybe-start+end
     (cond ((char? criteria)
-	   (let lp ((i (- end 1)))
-	     (and (>= i start)
+	   (let lp ((i (fx- end 1)))
+	     (and (fx>= i start)
 		  (if (char=? criteria (string-ref str i)) i
-		      (lp (- i 1))))))
+		      (lp (fx- i 1))))))
 	  ((char-set? criteria)
-	   (let lp ((i (- end 1)))
-	     (and (>= i start)
+	   (let lp ((i (fx- end 1)))
+	     (and (fx>= i start)
 		  (if (char-set-contains? criteria (string-ref str i)) i
-		      (lp (- i 1))))))
+		      (lp (fx- i 1))))))
 	  ((procedure? criteria)
-	   (let lp ((i (- end 1)))
-	     (and (>= i start)
+	   (let lp ((i (fx- end 1)))
+	     (and (fx>= i start)
 		  (if (criteria (string-ref str i)) i
-		      (lp (- i 1))))))
+		      (lp (fx- i 1))))))
 	  (else (##sys#error 'string-index-right "Second param is neither char-set, char, or predicate procedure."
 		       string-index-right criteria)))))
 
@@ -1228,20 +1228,20 @@
   (let-string-start+end (start end) string-skip str maybe-start+end
     (cond ((char? criteria)
 	   (let lp ((i start))
-	     (and (< i end)
+	     (and (fx< i end)
 		  (if (char=? criteria (string-ref str i))
-		      (lp (+ i 1))
+		      (lp (fx+ i 1))
 		      i))))
 	  ((char-set? criteria)
 	   (let lp ((i start))
-	     (and (< i end)
+	     (and (fx< i end)
 		  (if (char-set-contains? criteria (string-ref str i))
-		      (lp (+ i 1))
+		      (lp (fx+ i 1))
 		      i))))
 	  ((procedure? criteria)
 	   (let lp ((i start))
-	     (and (< i end)
-		  (if (criteria (string-ref str i)) (lp (+ i 1))
+	     (and (fx< i end)
+		  (if (criteria (string-ref str i)) (lp (fx+ i 1))
 		      i))))
 	  (else (##sys#error 'string-skip "Second param is neither char-set, char, or predicate procedure."
 		       string-skip criteria)))))
@@ -1249,21 +1249,21 @@
 (define (string-skip-right str criteria . maybe-start+end)
   (let-string-start+end (start end) string-skip-right str maybe-start+end
     (cond ((char? criteria)
-	   (let lp ((i (- end 1)))
-	     (and (>= i start)
+	   (let lp ((i (fx- end 1)))
+	     (and (fx>= i start)
 		  (if (char=? criteria (string-ref str i))
-		      (lp (- i 1))
+		      (lp (fx- i 1))
 		      i))))
 	  ((char-set? criteria)
-	   (let lp ((i (- end 1)))
-	     (and (>= i start)
+	   (let lp ((i (fx- end 1)))
+	     (and (fx>= i start)
 		  (if (char-set-contains? criteria (string-ref str i))
-		      (lp (- i 1))
+		      (lp (fx- i 1))
 		      i))))
 	  ((procedure? criteria)
-	   (let lp ((i (- end 1)))
-	     (and (>= i start)
-		  (if (criteria (string-ref str i)) (lp (- i 1))
+	   (let lp ((i (fx- end 1)))
+	     (and (fx>= i start)
+		  (if (criteria (string-ref str i)) (lp (fx- i 1))
 		      i))))
 	  (else (##sys#error 'string-skip-right "CRITERIA param is neither char-set or char."
 		       string-skip-right criteria)))))
@@ -1274,23 +1274,23 @@
 (define (string-count s criteria . maybe-start+end)
   (let-string-start+end (start end) string-count s maybe-start+end
     (cond ((char? criteria)
-	   (do ((i start (+ i 1))
+	   (do ((i start (fx+ i 1))
 		(count 0 (if (char=? criteria (string-ref s i))
-			     (+ count 1)
+			     (fx+ count 1)
 			     count)))
-	       ((>= i end) count)))
+	       ((fx>= i end) count)))
 
 	  ((char-set? criteria)
-	   (do ((i start (+ i 1))
+	   (do ((i start (fx+ i 1))
 		(count 0 (if (char-set-contains? criteria (string-ref s i))
-			     (+ count 1)
+			     (fx+ count 1)
 			     count)))
-	       ((>= i end) count)))
+	       ((fx>= i end) count)))
 
 	  ((procedure? criteria)
-	   (do ((i start (+ i 1))
-		(count 0 (if (criteria (string-ref s i)) (+ count 1) count)))
-	       ((>= i end) count)))
+	   (do ((i start (fx+ i 1))
+		(count 0 (if (criteria (string-ref s i)) (fx+ count 1) count)))
+	       ((fx>= i end) count)))
 
 	  (else (##sys#error 'string-count "CRITERIA param is neither char-set or char."
 		       string-count criteria)))))
@@ -1306,15 +1306,15 @@
 (define (string-fill! s char . maybe-start+end)
 ;  (check-arg char? char string-fill!)
   (let-string-start+end (start end) string-fill! s maybe-start+end
-    (do ((i (- end 1) (- i 1)))
-	((< i start))
+    (do ((i (fx- end 1) (fx- i 1)))
+	((fx< i start))
       (string-set! s i char))))
 
 (define (string-copy! to tstart from . maybe-fstart+fend)
   (let-string-start+end (fstart fend) string-copy! from maybe-fstart+fend
 ;    (check-arg integer? tstart string-copy!)
     (##sys#check-exact tstart 'string-copy!)			
-    (check-substring-spec string-copy! to tstart (+ tstart (- fend fstart)))
+    (check-substring-spec string-copy! to tstart (fx+ tstart (fx- fend fstart)))
     (%string-copy! to tstart from fstart fend)))
 
 ;;; Library-internal routine
@@ -1403,16 +1403,16 @@
   (let-optionals* maybe-c=+start+end
                   ((c= char=?) rest) ; (procedure? c=))
      (receive (rest2 start end) (string-parse-start+end make-kmp-restart-vector pattern rest)
-       (let* ((rvlen (- end start))
+       (let* ((rvlen (fx- end start))
 	   (rv (make-vector rvlen -1)))
-      (if (> rvlen 0)
-	  (let ((rvlen-1 (- rvlen 1))
+      (if (fx> rvlen 0)
+	  (let ((rvlen-1 (fx- rvlen 1))
 		(c0 (string-ref pattern start)))
 
 	    ;; Here's the main loop. We have set rv[0] ... rv[i].
 	    ;; K = I + START -- it is the corresponding index into PATTERN.
 	    (let lp1 ((i 0) (j -1) (k start))	
-	      (if (< i rvlen-1)
+	      (if (fx< i rvlen-1)
 
 		  (let ((ck (string-ref pattern k)))
 		    ;; lp2 invariant:
@@ -1420,17 +1420,17 @@
 		    ;;   or j = -1.
 		    (let lp2 ((j j))
 
-		      (cond ((= j -1)
-			     (let ((i1 (+ i 1)))
+		      (cond ((fx= j -1)
+			     (let ((i1 (fx+ i 1)))
 			       (vector-set! rv i1 (if (c= ck c0) -1 0))
-			       (lp1 i1 0 (+ k 1))))
+			       (lp1 i1 0 (fx+ k 1))))
 
 			    ;; pat[(k-j) .. k] matches pat[start..start+j].
-			    ((c= ck (string-ref pattern (+ j start)))
-			     (let* ((i1 (+ 1 i))
-				    (j1 (+ 1 j)))
+			    ((c= ck (string-ref pattern (fx+ j start)))
+			     (let* ((i1 (fx+ 1 i))
+				    (j1 (fx+ 1 j)))
 			       (vector-set! rv i1 j1)
-			       (lp1 i1 j1 (+ k 1))))
+			       (lp1 i1 j1 (fx+ k 1))))
 
 			    (else (lp2 (vector-ref rv j))))))))))
       rv))))
@@ -1450,10 +1450,10 @@
 
 (define (kmp-step pat rv c i c= p-start)
   (let lp ((i i))
-    (if (c= c (string-ref pat (+ i p-start)))	; Match =>
-	(+ i 1)					;   Done.
+    (if (c= c (string-ref pat (fx+ i p-start)))	; Match =>
+	(fx+ i 1)					;   Done.
 	(let ((i (vector-ref rv i)))		; Back up in PAT.
-	  (if (= i -1) 0			; Can't back up further.
+	  (if (fx= i -1) 0			; Can't back up further.
 	      (lp i))))))			; Keep trying for match.
 
 ;;; Zip through S[start,end), looking for a match of PAT. Assume we've
@@ -1477,16 +1477,16 @@
     (let ((patlen (vector-length rv)))
       (let lp ((si s-start)		; An index into S.
 	       (vi i))			; An index into RV.
-	(cond ((= vi patlen) (- si))	; Win.
-	      ((= si s-end) vi)		; Ran off the end.
+	(cond ((fx= vi patlen) (- si))	; Win.
+	      ((fx= si s-end) vi)		; Ran off the end.
 	      (else			; Match s[si] & loop.
 	       (let ((c (string-ref s si)))
-		 (lp (+ si 1)	
+		 (lp (fx+ si 1)	
 		     (let lp2 ((vi vi))	; This is just KMP-STEP.
-		       (if (c= c (string-ref pat (+ vi p-start)))
-			   (+ vi 1)
+		       (if (c= c (string-ref pat (fx+ vi p-start)))
+			   (fx+ vi 1)
 			   (let ((vi (vector-ref rv vi)))
-			     (if (= vi -1) 0
+			     (if (fx= vi -1) 0
 				 (lp2 vi))))))))))))) )
 
 
@@ -1502,19 +1502,19 @@
 
 (define (string-reverse s . maybe-start+end)
   (let-string-start+end (start end) string-reverse s maybe-start+end
-    (let* ((len (- end start))
+    (let* ((len (fx- end start))
 	   (ans (make-string len)))
-      (do ((i start (+ i 1))
-	   (j (- len 1) (- j 1)))
-	  ((< j 0))
+      (do ((i start (fx+ i 1))
+	   (j (fx- len 1) (fx- j 1)))
+	  ((fx< j 0))
 	(string-set! ans j (string-ref s i)))
       ans)))
 
 (define (string-reverse! s . maybe-start+end)
   (let-string-start+end (start end) string-reverse! s maybe-start+end
-    (do ((i (- end 1) (- i 1))
-	 (j start (+ j 1)))
-	((<= i j))
+    (do ((i (fx- end 1) (fx- i 1))
+	 (j start (fx+ j 1)))
+	((fx<= i j))
       (let ((ci (string-ref s i)))
 	(string-set! s i (string-ref s j))
 	(string-set! s j ci)))))
@@ -1537,9 +1537,9 @@
 
 (define (string->list s . maybe-start+end)
   (let-string-start+end (start end) string->list s maybe-start+end
-    (do ((i (- end 1) (- i 1))
+    (do ((i (fx- end 1) (fx- i 1))
 	 (ans '() (cons (string-ref s i) ans)))
-	((< i start) ans))))
+	((fx< i start) ans))))
 
 ;;; Defined by R5RS, so commented out here.
 ;(define (list->string lis) (string-unfold null? car cdr lis))
@@ -1571,12 +1571,12 @@
 		  (slen (string-length string)))
 	     (if (zero? slen)
 		 (lp tail nchars first)
-		 (lp tail (+ nchars slen) (or first strings)))))
+		 (lp tail (fx+ nchars slen) (or first strings)))))
 
 	  ((zero? nchars) "")
 
 	  ;; Just one non-empty string! Return it.
-	  ((= nchars (string-length (car first))) (car first))
+	  ((fx= nchars (string-length (car first))) (car first))
 
 	  (else (let ((ans (make-string nchars)))
 		  (let lp ((strings first) (i 0))
@@ -1584,7 +1584,7 @@
 			(let* ((s (car strings))
 			       (slen (string-length s)))
 			  (%string-copy! ans i s 0 slen)
-			  (lp (cdr strings) (+ i slen)))))
+			  (lp (cdr strings) (fx+ i slen)))))
 		  ans)))))
 			
 
@@ -1595,7 +1595,7 @@
 ;;; to avoid non-R5RS dependencies.
 (define (string-concatenate strings)
   (let* ((total (do ((strings strings (cdr strings))
-		     (i 0 (+ i (string-length (car strings)))))
+		     (i 0 (fx+ i (string-length (car strings)))))
 		    ((not (pair? strings)) i)))
 	 (ans (make-string total)))
     (let lp ((i 0) (strings strings))
@@ -1603,7 +1603,7 @@
 	  (let* ((s (car strings))
 		 (slen (string-length s)))
 	    (%string-copy! ans i s 0 slen)
-	    (lp (+ i slen) (cdr strings)))))
+	    (lp (fx+ i slen) (cdr strings)))))
     ans))
 	  
 
@@ -1627,7 +1627,7 @@
     (##sys#check-exact end 'string-concatenate-reverse)
     (let ((len (let lp ((sum 0) (lis string-list))
 		 (if (pair? lis)
-		     (lp (+ sum (string-length (car lis))) (cdr lis))
+		     (lp (fx+ sum (string-length (car lis))) (cdr lis))
 		     sum))))
 
       (%finish-string-concatenate-reverse len string-list final end))))
@@ -1645,7 +1645,7 @@
     (let lp ((len 0) (nzlist #f) (lis string-list))
       (if (pair? lis)
 	  (let ((slen (string-length (car lis))))
-	    (lp (+ len slen)
+	    (lp (fx+ len slen)
 		(if (or nzlist (zero? slen)) nzlist lis)
 		(cdr lis)))
 
@@ -1653,20 +1653,20 @@
 
 		;; LEN > 0, so NZLIST is non-empty.
 
-		((and (zero? end) (= len (string-length (car nzlist))))
+		((and (zero? end) (fx= len (string-length (car nzlist))))
 		 (car nzlist))
 
 		(else (%finish-string-concatenate-reverse len nzlist final end)))))))
 
 (define (%finish-string-concatenate-reverse len string-list final end)
-  (let ((ans (make-string (+ end len))))
+  (let ((ans (make-string (fx+ end len))))
     (%string-copy! ans len final 0 end)
     (let lp ((i len) (lis string-list))
       (if (pair? lis)
 	  (let* ((s   (car lis))
 		 (lis (cdr lis))
 		 (slen (string-length s))
-		 (i (- i slen)))
+		 (i (fx- i slen)))
 	    (%string-copy! ans i s 0 slen)
 	    (lp i lis))))
     ans))
@@ -1682,12 +1682,12 @@
   (check-substring-spec string-replace s1 start1 end1)
   (let-string-start+end (start2 end2) string-replace s2 maybe-start+end
     (let* ((slen1 (string-length s1))
-	   (sublen2 (- end2 start2))
-	   (alen (+ (- slen1 (- end1 start1)) sublen2))
+	   (sublen2 (fx- end2 start2))
+	   (alen (fx+ (fx- slen1 (fx- end1 start1)) sublen2))
 	   (ans (make-string alen)))
       (%string-copy! ans 0 s1 0 start1)
       (%string-copy! ans start1 s2 start2 end2)
-      (%string-copy! ans (+ start1 sublen2) s1 end1 slen1)
+      (%string-copy! ans (fx+ start1 sublen2) s1 end1 slen1)
       ans)))
 
 
@@ -1702,13 +1702,13 @@
       ((token-chars char-set:graphic) rest) ; (char-set? token-chars)) rest)
     (let-string-start+end (start end) string-tokenize s rest
       (let lp ((i end) (ans '()))
-	(cond ((and (< start i) (string-index-right s token-chars start i)) =>
+	(cond ((and (fx< start i) (string-index-right s token-chars start i)) =>
 	       (lambda (tend-1)
-		 (let ((tend (+ 1 tend-1)))
+		 (let ((tend (fx+ 1 tend-1)))
 		   (cond ((string-skip-right s token-chars start tend-1) =>
 			  (lambda (tstart-1)
 			    (lp tstart-1
-				(cons (##sys#substring s (+ 1 tstart-1) tend)
+				(cons (##sys#substring s (fx+ 1 tstart-1) tend)
 				      ans))))
 			 (else (cons (##sys#substring s start tend) ans))))))
 	      (else ans))))))
@@ -1757,14 +1757,14 @@
 		   (values to start end)))
 ;	       (let ((slen (string-length (check-arg string? s xsubstring))))
 	       (let ((slen (string-length s)))
-		 (values (+ from slen) 0 slen)))
-    (let ((slen   (- end start))
-	  (anslen (- to  from)))
+		 (values (fx+ from slen) 0 slen)))
+    (let ((slen   (fx- end start))
+	  (anslen (fx- to  from)))
       (cond ((zero? anslen) "")
 	    ((zero? slen) (##sys#error 'xsubstring "Cannot replicate empty (sub)string"
 				  xsubstring s from to start end))
 
-	    ((= 1 slen)		; Fast path for 1-char replication.
+	    ((fx= 1 slen)		; Fast path for 1-char replication.
 	     (make-string anslen (string-ref s start)))
 
 	    ;; CHICKEN compiles this file with (declare (fixnum)), so
@@ -1806,18 +1806,18 @@
 		   (##sys#check-exact sto 'string-xcopy!)
 		   (values sto start end)))
 	       (let ((slen (string-length s)))
-		 (values (+ sfrom slen) 0 slen)))
+		 (values (fx+ sfrom slen) 0 slen)))
 
-    (let* ((tocopy (- sto sfrom))
-	   (tend (+ tstart tocopy))
-	   (slen (- end start)))
+    (let* ((tocopy (fx- sto sfrom))
+	   (tend (fx+ tstart tocopy))
+	   (slen (fx- end start)))
       (check-substring-spec string-xcopy! target tstart tend)
       (cond ((zero? tocopy))
 	    ((zero? slen) (##sys#error 'string-xcopy! "Cannot replicate empty (sub)string"
 				 string-xcopy!
 				 target tstart s sfrom sto start end))
 
-	    ((= 1 slen)			; Fast path for 1-char replication.
+	    ((fx= 1 slen)			; Fast path for 1-char replication.
 	     (##srfi13#string-fill! target (string-ref s start) tstart tend))
 
 	    ;; CHICKEN compiles this file with (declare (fixnum)), so
@@ -1838,23 +1838,23 @@
 ;;; This is the core copying loop for XSUBSTRING and STRING-XCOPY!
 ;;; Internal -- not exported, no careful arg checking.
 (define (%multispan-repcopy! target tstart s sfrom sto start end)
-  (let* ((slen (- end start))
-	 (i0 (+ start (modulo sfrom slen)))
-	 (total-chars (- sto sfrom)))
+  (let* ((slen (fx- end start))
+	 (i0 (fx+ start (modulo sfrom slen)))
+	 (total-chars (fx- sto sfrom)))
 
     ;; Copy the partial span @ the beginning
     (%string-copy! target tstart s i0 end)
 		    
-    (let* ((ncopied (- end i0))			; We've copied this many.
-	   (nleft (- total-chars ncopied))	; # chars left to copy.
+    (let* ((ncopied (fx- end i0))			; We've copied this many.
+	   (nleft (fx- total-chars ncopied))	; # chars left to copy.
 	   (nspans (quotient nleft slen)))	; # whole spans to copy
 			   
       ;; Copy the whole spans in the middle.
-      (do ((i (+ tstart ncopied) (+ i slen))	; Current target index.
-	   (nspans nspans (- nspans 1)))	; # spans to copy
+      (do ((i (fx+ tstart ncopied) (fx+ i slen))	; Current target index.
+	   (nspans nspans (fx- nspans 1)))	; # spans to copy
 	  ((zero? nspans)
 	   ;; Copy the partial-span @ the end & we're done.
-	   (%string-copy! target i s start (+ start (- total-chars (- i tstart)))))
+	   (%string-copy! target i s start (fx+ start (fx- total-chars (fx- i tstart)))))
 
 	(%string-copy! target i s start end))))); Copy a whole span.
 
