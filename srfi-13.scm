@@ -1596,21 +1596,29 @@
 ; Alas, Scheme 48's APPLY blows up if you have many, many arguments.
 ;(define (string-concatenate strings) (apply string-append strings))
 
-;;; Here it is written out. I avoid using REDUCE to add up string lengths
-;;; to avoid non-R5RS dependencies.
-(define (string-concatenate strings)
-  (let* ((total (do ((strings strings (cdr strings))
-		     (i 0 (fx+ i (string-length (car strings)))))
-		    ((not (pair? strings)) i)))
-	 (ans (make-string total)))
-    (let lp ((i 0) (strings strings))
-      (if (pair? strings)
-	  (let* ((s (car strings))
-		 (slen (string-length s)))
-	    (%string-copy! ans i s 0 slen)
-	    (lp (fx+ i slen) (cdr strings)))))
-    ans))
-	  
+(define (string-concatenate strs)
+  ;; Adapted from data-structure's string-intersperse
+  (##sys#check-list strs 'string-concatenate)
+  (let loop1 ((ss strs) (n 0))
+    (cond ((##core#inline "C_eqp" ss '())
+           (if (##core#inline "C_eqp" strs '())
+               ""
+               (let ((str2 (##sys#allocate-vector n #t #\space #f)))
+                 (let loop2 ((ss2 strs) (n2 0))
+                   (let* ((stri (##sys#slot ss2 0))
+                          (next (##sys#slot ss2 1)) 
+                          (strilen (##sys#size stri)))
+                     (##core#inline "C_substring_copy" stri str2 0 strilen n2)
+                     (if (##core#inline "C_eqp" next '())
+                         str2
+                         (loop2 next (fx+ n2 strilen))))))))
+          ((and (##core#inline "C_blockp" ss) (##core#inline "C_pairp" ss))
+           (let ((stri (##sys#slot ss 0)))
+             (##sys#check-string stri 'string-intersperse)
+             (loop1 (##sys#slot ss 1)
+                    (fx+ (##sys#size stri) n))))
+          (else (##sys#error-not-a-proper-list strs)))))
+
 
 ;;; Defined by R5RS, so commented out here.
 ;(define (string-append . strings) (string-concatenate strings))

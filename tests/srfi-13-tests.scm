@@ -487,6 +487,22 @@
           "a" "b" "c" "d" "e" "f" "g" "h"
           "i" "j" "k" "l" "m" "n" "o" "p"
           "q" "r" "s" "t" "u" "v" "w" "x" "y" "z")))
+
+;; string-concatenate errors
+(test-error "string-concatenate arity error (1)" (string-concatenate))
+(test-error "string-concatenate arity error (2)" (string-concatenate '("foo") '("bar")))
+(test-error "string-concatenate invalid argument (string)" (string-concatenate "foo"))
+(test-error "string-concatenate invalid argument (boolean)" (string-concatenate #f))
+(test-error "string-concatenate invalid argument (number)" (string-concatenate 0))
+(test-error "string-concatenate invalid argument (char)" (string-concatenate #\a))
+(test-error "string-concatenate invalid argument (symbol)" (string-concatenate 'foo))
+(test-error "string-concatenate invalid argument (vector)" (string-concatenate '#("foo")))
+(test-error "string-concatenate invalid argument (procedure)" (string-concatenate (lambda _ _)))
+(test-error "string-concatenate invalid argument (char set)" (string-concatenate char-set:blank))
+(test-error "string-concatenate invalid argument (unspecified)" (string-concatenate (if #f #f)))
+(test-error "string-concatenate invalid argument (improper list)" (string-concatenate '("foo" "bar" . "baz")))
+(test-error "string-concatenate invalid argument (list of non-strings)" (string-concatenate '(0 'bar)))
+
 (test "string-concatenate/shared" "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
        (string-concatenate/shared
         '("A" "B" "C" "D" "E" "F" "G" "H"
