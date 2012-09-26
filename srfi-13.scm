@@ -1333,26 +1333,36 @@
 ;;; See below for fast KMP version.
 
 (define (string-contains string substring . maybe-starts+ends)
-  (let-string-start+end2 (start1 end1 start2 end2) 
-                         string-contains string substring maybe-starts+ends
-    (let* ((len (fx- end2 start2))
-	   (i-bound (fx- end1 len)))
-      (let lp ((i start1))
-	(and (fx<= i i-bound)
-	     (if (string= string substring i (fx+ i len) start2 end2)
-		 i
-		 (lp (fx+ i 1))))))))
+  (if (null? maybe-starts+ends)
+      (begin
+        (##sys#check-string string 'string-contains)
+        (##sys#check-string substring 'string-contains)
+        (##sys#substring-index substring string 0))
+      (let-string-start+end2 (start1 end1 start2 end2) 
+                             string-contains string substring maybe-starts+ends
+        (let* ((len (fx- end2 start2))
+               (i-bound (fx- end1 len)))
+          (let lp ((i start1))
+            (and (fx<= i i-bound)
+                 (if (string= string substring i (fx+ i len) start2 end2)
+                     i
+                     (lp (fx+ i 1)))))))))
 
 (define (string-contains-ci string substring . maybe-starts+ends)
-  (let-string-start+end2 (start1 end1 start2 end2) 
-                         string-contains string substring maybe-starts+ends
-    (let* ((len (fx- end2 start2))
-	   (i-bound (fx- end1 len)))
-      (let lp ((i start1))
-	(and (fx<= i i-bound)
-	     (if (string-ci= string substring i (fx+ i len) start2 end2)
-		 i
-		 (lp (fx+ i 1))))))))
+  (if (null? maybe-starts+ends)
+      (begin
+        (##sys#check-string string 'string-contains)
+        (##sys#check-string substring 'string-contains)
+        (##sys#substring-index-ci substring string 0))
+      (let-string-start+end2 (start1 end1 start2 end2) 
+                             string-contains string substring maybe-starts+ends
+        (let* ((len (fx- end2 start2))
+               (i-bound (fx- end1 len)))
+          (let lp ((i start1))
+            (and (fx<= i i-bound)
+                 (if (string-ci= string substring i (fx+ i len) start2 end2)
+                     i
+                     (lp (fx+ i 1)))))))))
 
 
 ;;; Searching for an occurrence of a substring

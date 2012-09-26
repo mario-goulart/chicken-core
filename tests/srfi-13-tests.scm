@@ -426,14 +426,65 @@
        (string-count "abc def\tghi jkl" char-set:whitespace 4))
 (test "string-count #4" 1
        (string-count "abc def\tghi jkl" char-set:whitespace 4 9))
-(test "string-contains" 3
-       (string-contains "Ma mere l'oye" "mer"))
-(test "string-contains" #f
-       (string-contains "Ma mere l'oye" "Mer"))
-(test "string-contains-ci" 3
-       (string-contains-ci "Ma mere l'oye" "Mer"))
-(test "string-contains-ci" #f
-       (string-contains-ci "Ma mere l'oye" "Meer"))
+
+(test "string-contains (1)" 3  (string-contains "Ma mere l'oye" "mer"))
+(test "string-contains (2)" #f (string-contains "Ma mere l'oye" "Mer"))
+(test "string-contains (3)" 0  (string-contains "foobar" "foo"))
+(test "string-contains (4)" 1  (string-contains "afoobar" "foo"))
+(test "string-contains (5)" #f (string-contains "foo" "foobar"))
+(test "string-contains (3)" 0  (string-contains "foofoobar" "foo"))
+
+(test-error "string-contains arity error (1)" (string-contains))
+(test-error "string-contains arity error (2)" (string-contains "foo"))
+(test-error "string-contains invalid first arg (number)" (string-contains 0 "foo"))
+(test-error "string-contains invalid first arg (char)" (string-contains #\a "foo"))
+(test-error "string-contains invalid first arg (symbol)" (string-contains 'foo "foo"))
+(test-error "string-contains invalid first arg (char set)" (string-contains char-set:blank "foo"))
+(test-error "string-contains invalid first arg (boolean)" (string-contains #f "foo"))
+(test-error "string-contains invalid first arg (list)" (string-contains '() "foo"))
+(test-error "string-contains invalid first arg (vector)" (string-contains '#() "foo"))
+(test-error "string-contains invalid first arg (procedure)" (string-contains (lambda _ _) "foo"))
+(test-error "string-contains invalid first arg (unspecified)" (string-contains (if #f #f) "foo"))
+
+(test-error "string-contains invalid second arg (number)" (string-contains "foo" 0))
+(test-error "string-contains invalid second arg (char)" (string-contains "foo" #\a))
+(test-error "string-contains invalid second arg (symbol)" (string-contains "foo" 'foo))
+(test-error "string-contains invalid second arg (char set)" (string-contains "foo" char-set:blank))
+(test-error "string-contains invalid second arg (boolean)" (string-contains "foo" #f))
+(test-error "string-contains invalid second arg (list)" (string-contains "foo" '()))
+(test-error "string-contains invalid second arg (vector)" (string-contains "foo" '#()))
+(test-error "string-contains invalid second arg (procedure)" (string-contains "foo" (lambda _ _)))
+(test-error "string-contains invalid second arg (unspecified)" (string-contains "foo" (if #f #f)))
+
+(test "string-contains-ci (1)" 3  (string-contains-ci "Ma mere l'oye" "Mer"))
+(test "string-contains-ci (2)" #f (string-contains-ci "Ma mere l'oye" "Meer"))
+(test "string-contains-ci (3)" 0  (string-contains-ci "Foobar" "foo"))
+(test "string-contains-ci (4)" 1  (string-contains-ci "afoobar" "foo"))
+(test "string-contains-ci (5)" #f (string-contains-ci "foo" "Foobar"))
+(test "string-contains-ci (3)" 0  (string-contains-ci "Foofoobar" "foo"))
+
+(test-error "string-contains-ci arity error (1)" (string-contains-ci))
+(test-error "string-contains-ci arity error (2)" (string-contains-ci "foo"))
+(test-error "string-contains-ci invalid first arg (number)" (string-contains-ci 0 "foo"))
+(test-error "string-contains-ci invalid first arg (char)" (string-contains-ci #\a "foo"))
+(test-error "string-contains-ci invalid first arg (symbol)" (string-contains-ci 'foo "foo"))
+(test-error "string-contains-ci invalid first arg (char set)" (string-contains-ci char-set:blank "foo"))
+(test-error "string-contains-ci invalid first arg (boolean)" (string-contains-ci #f "foo"))
+(test-error "string-contains-ci invalid first arg (list)" (string-contains-ci '() "foo"))
+(test-error "string-contains-ci invalid first arg (vector)" (string-contains-ci '#() "foo"))
+(test-error "string-contains-ci invalid first arg (procedure)" (string-contains-ci (lambda _ _) "foo"))
+(test-error "string-contains-ci invalid first arg (unspecified)" (string-contains-ci (if #f #f) "foo"))
+
+(test-error "string-contains-ci invalid second arg (number)" (string-contains-ci "foo" 0))
+(test-error "string-contains-ci invalid second arg (char)" (string-contains-ci "foo" #\a))
+(test-error "string-contains-ci invalid second arg (symbol)" (string-contains-ci "foo" 'foo))
+(test-error "string-contains-ci invalid second arg (char set)" (string-contains-ci "foo" char-set:blank))
+(test-error "string-contains-ci invalid second arg (boolean)" (string-contains-ci "foo" #f))
+(test-error "string-contains-ci invalid second arg (list)" (string-contains-ci "foo" '()))
+(test-error "string-contains-ci invalid second arg (vector)" (string-contains-ci "foo" '#()))
+(test-error "string-contains-ci invalid second arg (procedure)" (string-contains-ci "foo" (lambda _ _)))
+(test-error "string-contains-ci invalid second arg (unspecified)" (string-contains-ci "foo" (if #f #f)))
+
 
 (test "string-titlecase" "--Capitalize This Sentence."
        (string-titlecase "--capitalize tHIS sentence."))
