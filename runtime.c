@@ -4613,6 +4613,8 @@ C_regparm C_word C_fcall C_i_string_ci_equal_p(C_word x, C_word y)
   if(C_immediatep(y) || C_header_bits(y) != C_STRING_TYPE)
     barf(C_BAD_ARGUMENT_TYPE_ERROR, "string-ci=?", y);
 
+ if (x == y) return C_SCHEME_TRUE;
+
   n = C_header_size(x);
 
   if(n != C_header_size(y)) return C_SCHEME_FALSE;
