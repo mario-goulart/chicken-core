@@ -9,11 +9,14 @@
                    text)))
     (string-append text (make-string (- last-col len) #\.))))
 
+(define *test-count* 0)
+
 (define-syntax test
   (syntax-rules ()
     ((_ comment expect form)
      (begin
-       (display (fill (or comment "")))
+       (set! *test-count* (fx+ *test-count* 1))
+       (display (fill (conc "[" *test-count* "] " (or comment ""))))
        (cond ((equal? expect form)
               (display "[ok]"))
              (else
