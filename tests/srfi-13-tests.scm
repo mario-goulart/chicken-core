@@ -772,10 +772,37 @@
 (test "string-hash-ci" #t (= (string-hash-ci "aBrAcAdAbRa" 20 2 7)
                              (string-hash-ci (substring "AbRaCaDaBrA" 2 7) 20)))
 
-(test "string=" #t (string= "foo" "foo"))
-(test "string=" #t (string= "foobar" "foo" 0 3))
-(test "string=" #t (string= "foobar" "barfoo" 0 3 3))
-(test "string=" #t (not (string= "foobar" "barfoo" 0 3 2 5)))
+;;; string=
+(test "string= (1)" #t (string= "foo" "foo"))
+(test "string= (2)" #t (string= "foobar" "foo" 0 3))
+(test "string= (3)" #t (string= "foobar" "barfoo" 0 3 3))
+(test "string= (4)" #t (not (string= "foobar" "barfoo" 0 3 2 5)))
+(test "string= (5)" #t (string= "" ""))
+(test "string= (6)" #f (string= "" " "))
+(test-error "string= arity error (1)" (string=))
+(test-error "string= arity error (2)" (string= "foo"))
+
+;; string= invalid argument type errors
+(test-error "string= invalid first arg (number)" (string= 0 "foo"))
+(test-error "string= invalid first arg (boolean)" (string= #f "foo"))
+(test-error "string= invalid first arg (char)" (string= #\a "foo"))
+(test-error "string= invalid first arg (list)" (string= '() "foo"))
+(test-error "string= invalid first arg (vector)" (string= '#() "foo"))
+(test-error "string= invalid first arg (char set)" (string= char-set:blank "foo"))
+(test-error "string= invalid first arg (symbol)" (string= 'foo "foo"))
+(test-error "string= invalid first arg (procedure)" (string= (lambda _ _) "foo"))
+(test-error "string= invalid first arg (unspecified)" (string= (if #f #f) "foo"))
+
+(test-error "string= invalid second arg (number)" (string= "" 0))
+(test-error "string= invalid second arg (boolean)" (string= "" #f))
+(test-error "string= invalid second arg (char)" (string= "" #\a))
+(test-error "string= invalid second arg (list)" (string= "" '()))
+(test-error "string= invalid second arg (vector)" (string= "" '#()))
+(test-error "string= invalid second arg (char set)" (string= "" char-set:blank))
+(test-error "string= invalid second arg (symbol)" (string= "" 'foo))
+(test-error "string= invalid second arg (procedure)" (string= "" (lambda _ _)))
+(test-error "string= invalid second arg (unspecified)" (string= "" (if #f #f)))
+
 
 (test "string<>" #t (string<> "flo" "foo"))
 (test "string<>" #t (string<> "flobar" "foo" 0 3))
@@ -802,10 +829,37 @@
 (test "string>" #t (string> "barfoo" "fol" 3 6 0))
 (test "string>" #t (not (string> "barfoo" "foobar" 1 4 0 3)))
 
-(test "string-ci=" #t (string-ci= "Foo" "foO"))
-(test "string-ci=" #t (string-ci= "Foobar" "fOo" 0 3))
-(test "string-ci=" #t (string-ci= "Foobar" "bArfOo" 0 3 3))
-(test "string-ci=" #t (not (string-ci= "foobar" "BARFOO" 0 3 2 5)))
+;;; string-ci=
+(test "string-ci= (1)" #t (string-ci= "Foo" "foO"))
+(test "string-ci= (2)" #t (string-ci= "Foobar" "fOo" 0 3))
+(test "string-ci= (3)" #t (string-ci= "Foobar" "bArfOo" 0 3 3))
+(test "string-ci= (4)" #t (not (string-ci= "foobar" "BARFOO" 0 3 2 5)))
+(test "string-ci= (5)" #t (string-ci= "" ""))
+(test "string-ci= (6)" #f (string-ci= "" " "))
+(test-error "string-ci= arity error (1)" (string-ci=))
+(test-error "string-ci= arity error (2)" (string-ci= "foo"))
+
+;; string-ci= invalid argument type errors
+(test-error "string-ci= invalid first arg (number)" (string-ci= 0 "foo"))
+(test-error "string-ci= invalid first arg (boolean)" (string-ci= #f "foo"))
+(test-error "string-ci= invalid first arg (char)" (string-ci= #\a "foo"))
+(test-error "string-ci= invalid first arg (list)" (string-ci= '() "foo"))
+(test-error "string-ci= invalid first arg (vector)" (string-ci= '#() "foo"))
+(test-error "string-ci= invalid first arg (char set)" (string-ci= char-set:blank "foo"))
+(test-error "string-ci= invalid first arg (symbol)" (string-ci= 'foo "foo"))
+(test-error "string-ci= invalid first arg (procedure)" (string-ci= (lambda _ _) "foo"))
+(test-error "string-ci= invalid first arg (unspecified)" (string-ci= (if #f #f) "foo"))
+
+(test-error "string-ci= invalid second arg (number)" (string-ci= "" 0))
+(test-error "string-ci= invalid second arg (boolean)" (string-ci= "" #f))
+(test-error "string-ci= invalid second arg (char)" (string-ci= "" #\a))
+(test-error "string-ci= invalid second arg (list)" (string-ci= "" '()))
+(test-error "string-ci= invalid second arg (vector)" (string-ci= "" '#()))
+(test-error "string-ci= invalid second arg (char set)" (string-ci= "" char-set:blank))
+(test-error "string-ci= invalid second arg (symbol)" (string-ci= "" 'foo))
+(test-error "string-ci= invalid second arg (procedure)" (string-ci= "" (lambda _ _)))
+(test-error "string-ci= invalid second arg (unspecified)" (string-ci= "" (if #f #f)))
+
 
 (test "string-ci<>" #t (string-ci<> "flo" "FOO"))
 (test "string-ci<>" #t (string-ci<> "FLOBAR" "foo" 0 3))

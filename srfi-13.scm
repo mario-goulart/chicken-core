@@ -794,14 +794,19 @@
 ;;; I sure hope the %STRING-COMPARE calls get integrated.
 
 (define (string= s1 s2 . maybe-starts+ends)
-  (let-string-start+end2 (start1 end1 start2 end2) 
-			 string= s1 s2 maybe-starts+ends
-    (and (fx= (fx- end1 start1) (fx- end2 start2))			; Quick filter
-	 (or (and (eq? s1 s2) (fx= start1 start2))		; Fast path
-	     (%string-compare s1 start1 end1 s2 start2 end2	; Real test
-			      (lambda (i) #f)
-			      (lambda (i) (if i #t #f))
-			      (lambda (i) #f))))))
+  (if (null? maybe-starts+ends)
+      (begin
+        (##sys#check-string s1 'string=)
+        (##sys#check-string s2 'string=)
+        (##core#inline "C_i_string_equal_p" s1 s2))
+      (let-string-start+end2 (start1 end1 start2 end2) 
+                             string= s1 s2 maybe-starts+ends
+        (and (fx= (fx- end1 start1) (fx- end2 start2))		; Quick filter
+             (or (and (eq? s1 s2) (fx= start1 start2))		; Fast path
+                 (%string-compare s1 start1 end1 s2 start2 end2	; Real test
+                                  (lambda (i) #f)
+                                  (lambda (i) (if i #t #f))
+                                  (lambda (i) #f)))))))
 
 (define (string<> s1 s2 . maybe-starts+ends)
   (let-string-start+end2 (start1 end1 start2 end2) 
@@ -858,14 +863,19 @@
 			 (lambda (i) (if i #t #f))))))
 
 (define (string-ci= s1 s2 . maybe-starts+ends)
-  (let-string-start+end2 (start1 end1 start2 end2) 
-			 string-ci= s1 s2 maybe-starts+ends
-    (and (fx= (fx- end1 start1) (fx- end2 start2))			; Quick filter
-	 (or (and (eq? s1 s2) (fx= start1 start2))		; Fast path
-	     (%string-compare-ci s1 start1 end1 s2 start2 end2	; Real test
-				 (lambda (i) #f)
-				 (lambda (i) (if i #t #f))
-				 (lambda (i) #f))))))
+  (if (null? maybe-starts+ends)
+      (begin
+        (##sys#check-string s1 'string-ci=)
+        (##sys#check-string s2 'string-ci=)
+        (##core#inline "C_i_string_ci_equal_p" s1 s2))
+      (let-string-start+end2 (start1 end1 start2 end2)
+                             string-ci= s1 s2 maybe-starts+ends
+         (and (fx= (fx- end1 start1) (fx- end2 start2))			; Quick filter
+              (or (and (eq? s1 s2) (fx= start1 start2))		        ; Fast path
+                  (%string-compare-ci s1 start1 end1 s2 start2 end2	; Real test
+                                      (lambda (i) #f)
+                                      (lambda (i) (if i #t #f))
+                                      (lambda (i) #f)))))))
 
 (define (string-ci<> s1 s2 . maybe-starts+ends)
   (let-string-start+end2 (start1 end1 start2 end2) 
