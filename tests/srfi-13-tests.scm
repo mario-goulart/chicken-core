@@ -340,10 +340,64 @@
 (test "string-suffix-length-ci" 5
        (string-suffix-length-ci "CanCan" "cankancan"))
 
-(test "string-suffix?" #t    (string-suffix? "defg" "abcdefg"))
-(test "string-suffix?" #f    (string-suffix? "aefg" "abcdefg"))
-(test "string-suffix-ci?" #t (string-suffix-ci? "defg" "aBCDEfg"))
-(test "string-suffix-ci?" #f (string-suffix-ci? "aefg" "aBCDEfg"))
+;;; string-suffix?
+(test "string-suffix? (1)" #t    (string-suffix? "defg" "abcdefg"))
+(test "string-suffix? (2)" #f    (string-suffix? "aefg" "abcdefg"))
+(test "string-suffix? (3)" #t    (string-suffix? "" ""))
+(test "string-suffix? (4)" #f    (string-suffix? "Foo" "foo"))
+(test "string-suffix? (5)" #f    (string-suffix? "aFoo" "afoo"))
+
+;; string-suffix? errors
+(test-error "string-suffix? arity (1)" (string-suffix?))
+(test-error "string-suffix? arity (2)" (string-suffix? "foo"))
+(test-error "string-suffix? invalid first arg (number)" (string-suffix? 0 "foo"))
+(test-error "string-suffix? invalid first arg (symbol)" (string-suffix? 'foo "foo"))
+(test-error "string-suffix? invalid first arg (vector)" (string-suffix? '#() "foo"))
+(test-error "string-suffix? invalid first arg (list)" (string-suffix? '() "foo"))
+(test-error "string-suffix? invalid first arg (char)" (string-suffix? #\a "foo"))
+(test-error "string-suffix? invalid first arg (boolean)" (string-suffix? #f "foo"))
+(test-error "string-suffix? invalid first arg (char set)" (string-suffix? char-set:blank "foo"))
+(test-error "string-suffix? invalid first arg (procedure)" (string-suffix? (lambda _ _) "foo"))
+(test-error "string-suffix? invalid first arg (unspecified)" (string-suffix? (if #f #f) "foo"))
+(test-error "string-suffix? invalid second arg (number)" (string-suffix? "foo" 0))
+(test-error "string-suffix? invalid second arg (symbol)" (string-suffix? "foo" 'foo))
+(test-error "string-suffix? invalid second arg (vector)" (string-suffix? "foo" '#()))
+(test-error "string-suffix? invalid second arg (list)" (string-suffix? "foo" '()))
+(test-error "string-suffix? invalid second arg (char)" (string-suffix? "foo" #\a))
+(test-error "string-suffix? invalid second arg (boolean)" (string-suffix? "foo" #f))
+(test-error "string-suffix? invalid second arg (char set)" (string-suffix? "foo" char-set:blank))
+(test-error "string-suffix? invalid second arg (procedure)" (string-suffix? "foo" (lambda _ _)))
+(test-error "string-suffix? invalid second arg (unspecified)" (string-suffix? "foo" (if #f #f)))
+
+
+;;; string-suffix-ci?
+(test "string-suffix-ci? (1)" #t    (string-suffix-ci? "defg" "aBCDEfg"))
+(test "string-suffix-ci? (2)" #f    (string-suffix-ci? "aefg" "aBCDEfg"))
+(test "string-suffix-ci? (3)" #t    (string-suffix-ci? "" ""))
+(test "string-suffix-ci? (4)" #t    (string-suffix-ci? "Foo" "foo"))
+(test "string-suffix-ci? (5)" #t    (string-suffix-ci? "aFoo" "afoo"))
+
+;; string-suffix-ci? errors
+(test-error "string-suffix-ci? arity (1)" (string-suffix-ci?))
+(test-error "string-suffix-ci? arity (2)" (string-suffix-ci? "foo"))
+(test-error "string-suffix-ci? invalid first arg (number)" (string-suffix-ci? 0 "foo"))
+(test-error "string-suffix-ci? invalid first arg (symbol)" (string-suffix-ci? 'foo "foo"))
+(test-error "string-suffix-ci? invalid first arg (vector)" (string-suffix-ci? '#() "foo"))
+(test-error "string-suffix-ci? invalid first arg (list)" (string-suffix-ci? '() "foo"))
+(test-error "string-suffix-ci? invalid first arg (char)" (string-suffix-ci? #\a "foo"))
+(test-error "string-suffix-ci? invalid first arg (boolean)" (string-suffix-ci? #f "foo"))
+(test-error "string-suffix-ci? invalid first arg (char set)" (string-suffix-ci? char-set:blank "foo"))
+(test-error "string-suffix-ci? invalid first arg (procedure)" (string-suffix-ci? (lambda _ _) "foo"))
+(test-error "string-suffix-ci? invalid first arg (unspecified)" (string-suffix-ci? (if #f #f) "foo"))
+(test-error "string-suffix-ci? invalid second arg (number)" (string-suffix-ci? "foo" 0))
+(test-error "string-suffix-ci? invalid second arg (symbol)" (string-suffix-ci? "foo" 'foo))
+(test-error "string-suffix-ci? invalid second arg (vector)" (string-suffix-ci? "foo" '#()))
+(test-error "string-suffix-ci? invalid second arg (list)" (string-suffix-ci? "foo" '()))
+(test-error "string-suffix-ci? invalid second arg (char)" (string-suffix-ci? "foo" #\a))
+(test-error "string-suffix-ci? invalid second arg (boolean)" (string-suffix-ci? "foo" #f))
+(test-error "string-suffix-ci? invalid second arg (char set)" (string-suffix-ci? "foo" char-set:blank))
+(test-error "string-suffix-ci? invalid second arg (procedure)" (string-suffix-ci? "foo" (lambda _ _)))
+(test-error "string-suffix-ci? invalid second arg (unspecified)" (string-suffix-ci? "foo" (if #f #f)))
 
 
 ;;; string-prefix?

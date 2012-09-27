@@ -682,9 +682,18 @@
         (%string-prefix? s1 start1 end1 s2 start2 end2))))
 
 (define (string-suffix? s1 s2 . maybe-starts+ends)
-  (let-string-start+end2 (start1 end1 start2 end2) 
-			 string-suffix? s1 s2 maybe-starts+ends
-    (%string-suffix? s1 start1 end1 s2 start2 end2)))
+  (if (null? maybe-starts+ends)
+      (begin
+        (##sys#check-string s1 'string-suffix?)
+        (##sys#check-string s2 'string-suffix?)
+        (or (string=? s1 s2)
+            (let ((len-s1 (string-length s1))
+                  (len-s2 (string-length s2)))
+              (and (>= len-s2 len-s1)
+                   (##sys#substring=? s1 s2 0 (- len-s2 len-s1) #f)))))
+      (let-string-start+end2 (start1 end1 start2 end2)
+                             string-suffix? s1 s2 maybe-starts+ends
+        (%string-suffix? s1 start1 end1 s2 start2 end2))))
 
 (define (string-prefix-ci? s1 s2 . maybe-starts+ends)
   (if (null? maybe-starts+ends)
@@ -700,9 +709,18 @@
         (%string-prefix-ci? s1 start1 end1 s2 start2 end2))))
 
 (define (string-suffix-ci? s1 s2 . maybe-starts+ends)
-  (let-string-start+end2 (start1 end1 start2 end2) 
-			 string-suffix-ci? s1 s2 maybe-starts+ends
-    (%string-suffix-ci? s1 start1 end1 s2 start2 end2)))
+  (if (null? maybe-starts+ends)
+      (begin
+        (##sys#check-string s1 'string-suffix-ci?)
+        (##sys#check-string s2 'string-suffix-ci?)
+        (or (string-ci=? s1 s2)
+            (let ((len-s1 (string-length s1))
+                  (len-s2 (string-length s2)))
+              (and (>= len-s2 len-s1)
+                   (##sys#substring-ci=? s1 s2 0 (- len-s2 len-s1) #f)))))
+      (let-string-start+end2 (start1 end1 start2 end2) 
+                             string-suffix-ci? s1 s2 maybe-starts+ends
+        (%string-suffix-ci? s1 start1 end1 s2 start2 end2))))
 
 
 ;;; Here are the internal routines that do the real work.
