@@ -178,7 +178,7 @@ static C_TLS struct stat C_statbuf;
 #define C_do_readlink(f, b)    C_fix(readlink(C_data_pointer(f), C_data_pointer(b), FILENAME_MAX))
 #define C_getpwnam(n)       C_mk_bool((C_user = getpwnam((char *)C_data_pointer(n))) != NULL)
 #define C_getpwuid(u)       C_mk_bool((C_user = getpwuid(C_unfix(u))) != NULL)
-#ifdef HAVE_GRP_H
+#if !defined(__ANDROID__) && defined(HAVE_GRP_H)
 #define C_getgrnam(n)       C_mk_bool((C_group = getgrnam((char *)C_data_pointer(n))) != NULL)
 #define C_getgrgid(u)       C_mk_bool((C_group = getgrgid(C_unfix(u))) != NULL)
 #else
@@ -292,7 +292,7 @@ static C_TLS sigset_t C_sigset;
 
 #define C_ctime(n)          (C_secs = (n), ctime(&C_secs))
 
-#if defined(__SVR4) || defined(C_MACOSX)
+#if defined(__SVR4) || defined(C_MACOSX) || defined(__ANDROID__)
 /* Seen here: http://lists.samba.org/archive/samba-technical/2002-November/025571.html */
 
 static time_t C_timegm(struct tm *t)
@@ -370,7 +370,7 @@ static gid_t *C_groups = NULL;
 #define C_set_gid(n, id)  (C_groups[ C_unfix(n) ] = C_unfix(id), C_SCHEME_UNDEFINED)
 #define C_set_groups(n)   C_fix(setgroups(C_unfix(n), C_groups))
 
-#ifdef TIOCGWINSZ
+#if !defined(__ANDROID__) && defined(TIOCGWINSZ)
 static int get_tty_size(int p, int *rows, int *cols)
 {
  struct winsize tty_size;
