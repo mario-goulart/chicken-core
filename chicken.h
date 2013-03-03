@@ -669,6 +669,8 @@ static inline int isinf_ld (long double x)
 # define C_SOFTWARE_TYPE "unix"
 #elif defined(ECOS)
 # define C_SOFTWARE_TYPE "ecos"
+#elif defined(__ANDROID__)
+# define C_SOFTWARE_TYPE "android"
 #else
 # define C_SOFTWARE_TYPE "unknown"
 #endif
@@ -715,6 +717,8 @@ static inline int isinf_ld (long double x)
 # else
 #   define C_SOFTWARE_VERSION "sunos"
 # endif
+#elif defined(__ANDROID__)
+# define C_SOFTWARE_VERSION "android"
 #else
 # define C_SOFTWARE_VERSION "unknown"
 #endif
