@@ -215,6 +215,7 @@ apply-hack.ppc.darwin.S
 apply-hack.ppc.sysv.S
 chicken.pdf
 Makefile
+Makefile.android
 Makefile.linux
 Makefile.macosx
 Makefile.mingw
