@@ -135,6 +135,14 @@ static C_TLS struct {
   char *gr_mem[ 1 ];
 } C_group = { "", "", 0, { "" } };
 #endif
+
+/* Android doesn't provide pw_gecos in the passwd struct */
+#ifdef __ANDROID__
+# define C_PW_GECOS ("")
+#else
+# define C_PW_GECOS (C_user->pw_gecos)
+#endif
+
 static C_TLS int C_pipefds[ 2 ];
 static C_TLS time_t C_secs;
 static C_TLS struct timeval C_timeval;
@@ -978,7 +986,7 @@ EOF
 (define-foreign-variable _user-passwd nonnull-c-string "C_user->pw_passwd")
 (define-foreign-variable _user-uid int "C_user->pw_uid")
 (define-foreign-variable _user-gid int "C_user->pw_gid")
-(define-foreign-variable _user-gecos nonnull-c-string "C_user->pw_gecos")
+(define-foreign-variable _user-gecos nonnull-c-string "C_PW_GECOS")
 (define-foreign-variable _user-dir c-string "C_user->pw_dir")
 (define-foreign-variable _user-shell c-string "C_user->pw_shell")
 
