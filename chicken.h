@@ -89,7 +89,7 @@
 # define C_NONUNIX
 #endif
 
-#if defined(__sun__) && defined(__svr4__)
+#if defined(__sun) && defined(__SVR4)
 # define C_SOLARIS
 #endif
 
@@ -135,9 +135,9 @@
 # include <arpa/nameser.h>
 #elif defined(_AIX)
 # include <sys/machine.h>
-#elif defined(__sun__)
+#elif defined(__sun)
 # include <sys/isa_defs.h>
-#elif defined(__svr4__)
+#elif defined(__SVR4)
 # include <sys/byteorder.h>
 #endif
 
@@ -530,7 +530,7 @@ static inline int isinf_ld (long double x)
 #define C_uword                   unsigned C_word
 #define C_header                  C_uword
 
-#if defined(__sun__) && !defined(__svr4__) 
+#if defined(__sun) && !defined(__SVR4) 
 /* SunOS is supposed not to have stdint.h */
 # include <inttypes.h>
 #else
@@ -713,8 +713,8 @@ static inline int isinf_ld (long double x)
 # define C_SOFTWARE_VERSION "haiku"
 #elif defined(__ANDROID__)
 # define C_SOFTWARE_VERSION "android"
-#elif defined(__sun__)
-# if defined(__svr4__)
+#elif defined(__sun)
+# if defined(__SVR4)
 #   define C_SOFTWARE_VERSION "solaris"
 # else
 #   define C_SOFTWARE_VERSION "sunos"
@@ -1595,7 +1595,11 @@ C_varextern C_TLS C_long
 C_varextern C_TLS C_byte
   *C_fromspace_top,
   *C_fromspace_limit;
+#ifdef HAVE_SIGSETJMP
+C_varextern C_TLS sigjmp_buf C_restart;
+#else
 C_varextern C_TLS jmp_buf C_restart;
+#endif
 C_varextern C_TLS void *C_restart_address;
 C_varextern C_TLS int C_entry_point_status;
 C_varextern C_TLS int C_gui_mode;
@@ -2869,7 +2873,7 @@ C_path_to_executable(C_char *fname)
     return buffer;
   }
   else return NULL;  
-# elif defined(__unix__) || defined(C_XXXBSD)
+# elif defined(__unix__) || defined(__unix) || defined(C_XXXBSD)
   int i, j, k, l;
   C_char *path, *dname;
 
