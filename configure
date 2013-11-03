@@ -1,0 +1,313 @@
+#! /bin/sh
+# -*- shell-script -*-
+
+PLATFORMS=`ls Makefile.* | sed s/Makefile\.//`
+
+echo_err() {
+    echo "$@" >&2
+}
+
+show_platforms() {
+    # $1 (optional): printer
+    local printer
+    if [ -z "$1" ]; then
+        printer=echo
+    else
+        printer=echo_err
+    fi
+    for p in $PLATFORMS; do
+        $printer "     - $p"
+    done
+}
+
+help() {
+    # $1 : exit status.
+    local this=`basename $0`
+    local display
+    if [ "$1" = "0" ]; then
+        display=echo
+    else
+        display=echo_err
+    fi
+
+    $display "Usage: $this [ -h | -help | --help ]"
+    $display "       $this --platform=<platform> <options>"
+    $display ""
+    $display "--platform=<platform>"
+    $display "  The software platform where CHICKEN will be built to."
+    $display "  The available platforms are:"
+    show_platforms $display
+
+    $display ""
+    $display "<options>:"
+    $display ""
+    $display "--prefix=<directory>"
+    $display "  Installation prefix.  All files installed by CHICKEN will"
+    $display "  be stored under <directory>.  Default = /usr/local"
+
+    $display ""
+    $display "--debugbuild"
+    $display "  Disable optimizations in compiled C code and enable"
+    $display "  debug information."
+
+    $display ""
+    $display "--staticbuild"
+    $display "    Build only static versions of the runtime library, compiler"
+    $display "    and interpreter. chicken-install, chicken-uninstall and"
+    $display "    chicken-status will not be generated, as it is mostly"
+    $display "    useless unless compiled code can be loaded."
+
+    $display ""
+    $display "--symbolgc"
+    $display "    Always enable garbage collection for unused symbols in the"
+    $display "    symbol table by default. This will result in slightly slower"
+    $display "    garbage collection, but minimizes the amount of garbage"
+    $display "    retained at runtime (which might be important for long"
+    $display "    running server applications). If you don't specify this"
+    $display "    option you can still enable symbol GC at runtime by passing"
+    $display "    the -:w runtime option when running the program."
+
+    $display ""
+    $display "--extra-chicken-options=<options>"
+    $display "    Additional options that should be passed to chicken when"
+    $display "    building the system."
+
+    $display ""
+    $display "--c-compiler-optimization-options=<options>"
+    $display "    Override built-in C compiler optimization options. Available"
+    $display "    for debug or release build."
+
+    $display ""
+    $display "--program-prefix=<program prefix>"
+    $display "    A prefix to prepend to the names of all generated executables."
+    $display "    This allows having multiple CHICKEN versions in your PATH"
+    $display "    (but note that they have to be installed at different locations)."
+
+    $display ""
+    $display "--program-suffix=<suffix>"
+    $display "    A suffix to be appended to the names of all generated executables."
+
+    $display ""
+    $display "--hostsystem=<host system>"
+    $display "    A <machine>-<platform> name prefix to use for the C compiler to to"
+    $display "    use to compile the runtime system and executables. Set this variable"
+    $display "    if you want to compile CHICKEN for a different architecture than"
+    $display "    the one on which you are building it."
+
+    $display ""
+    $display "--targetsystem=<target system>"
+    $display "    Similar to --hostsystem, but specifies the name"
+    $display "    prefix to use for compiling code with the "csc" compiler"
+    $display "    driver. This is required for creating a "cross chicken", a"
+    $display "    specially built CHICKEN that invokes a cross C compiler to"
+    $display "    build the final binaries. You will need a cross compiled"
+    $display "    runtime system by building a version of CHICKEN with the"
+    $display "    HOST option mentioned above. More information about this"
+    $display "    process and the variables that you should set are provided"
+    $display "    in the manual (see the "Cross development" chapter)."
+
+    $display ""
+    $display "--srcdir=<directory>"
+    $display "    Specifies that CHICKEN should be built outside of its source"
+    $display "    tree. The --srcdir option indicates the location of the"
+    $display "    CHICKEN source tree. The executables and object files will"
+    $display "    be generated in the current directory."
+
+    $display ""
+    $display "--vardir=<directory>"
+    $display "    If set, this directory overrides the location where"
+    $display "    extensions along with their metadata are stored. Normally"
+    $display "    this will be equivalent to \"<PREFIX>/lib/chicken/<BINARYVERSION>\"."
+    $display "    When VARDIR is specified, extensions will be stored in"
+    $display "    \"<VARDIR>/chicken/<BINARYVERSION>\", conforming to the FHS."
+
+    $display ""
+    $display "--c-compiler=<C compiler>"
+    $display "    You can select an alternative compiler by setting this variable."
+    $display "    The default compiler is "gcc". CHICKEN can be built with the"
+    $display "    LLVM version of gcc and with "clang", the LLVM-based C compiler,"
+    $display "    just set --c-compiler to \"llvm-gcc\" or \"clang\"."
+
+    $display ""
+    $display "--linker=<linker>"
+    $display "    Selects the linker to be used for creating executables and"
+    $display "    dynamic libraries from compiled C code. This should normally"
+    $display "    be the same as --c-compiler."
+
+    $display ""
+    $display "--profile-objects=<profile objects>"
+    $display "    This variable allows you to profile (parts of) CHICKEN itself."
+    $display "    Just pass in a whitespace-separated list of objects, without"
+    $display "    the .scm-extension.  (An "object" here is an individual"
+    $display "    .scm-file which gets compiled to a .c-file)"
+    $display "    To build with profiling support, run \"make spotless\" first."
+    $display "    Be warned that this is a highly experimental option and"
+    $display "    profiling doesn't work for every component of CHICKEN."
+
+    $display ""
+    $display "--chicken=<chicken>"
+    $display "    Path to the \"chicken\" executable to be used for compiling Scheme"
+    $display "    code to C."
+
+    exit $1
+}
+
+
+get_opt_val() {
+    # $1 : opt=val
+    echo "$@" | sed "s/^--[^=]*=//"
+}
+
+set_var() {
+    # $1 : variable
+    # $2 : value
+    if [ ! -z "$2" ]; then
+        echo -n "$1=" >> config.make
+        shift
+        echo "$@" >> config.make
+    fi
+}
+
+PLATFORM=
+PREFIX=
+DEBUGBUILD=
+STATICBUILD=
+SYMBOLGC=
+C_COMPILER=
+C_COMPILER_OPTIMIZATION_OPTIONS=
+RC_COMPILER=
+PROGRAM_PREFIX=
+PROGRAM_SUFFIX=
+HOSTSYSTEM=
+TARGETSYSTEM=
+TARGET_PREFIX=
+SRCDIR=
+VARDIR=
+EXTRA_CHICKEN_OPTIONS=
+LINKER=
+PROFILE_OBJECTS=
+CHICKEN=
+
+if [ -z "$*" ]; then
+    help 1
+else
+    for arg in "$@"; do
+        case "$arg" in
+            --help)
+                help 0
+                ;;
+            -help)
+                help 0
+                ;;
+            -h)
+                help 0
+                ;;
+            --platform=*)
+                PLATFORM=`get_opt_val $arg`
+                ;;
+            --prefix=*)
+                PREFIX=`get_opt_val $arg`
+                ;;
+            --debugbuild)
+                DEBUGBUILD=1
+                ;;
+            --staticbuild)
+                STATICBUILD=1
+                ;;
+            --symbolgc)
+                SYMBOLGC=1
+                ;;
+            --c-compiler=*)
+                C_COMPILER=`get_opt_val $arg`
+                ;;
+            --c-compiler-optimization-options=*)
+                C_COMPILER_OPTIMIZATION_OPTIONS=`get_opt_val $arg`
+                ;;
+            --rc-compiler=*)
+                RC_COMPILER=`get_opt_val $arg`
+                ;;
+            --program-prefix=*)
+                PROGRAM_PREFIX=`get_opt_val $arg`
+                ;;
+            --program-suffix=*)
+                PROGRAM_SUFFIX=`get_opt_val $arg`
+                ;;
+            --hostsystem=*)
+                HOSTSYSTEM=`get_opt_val $arg`
+                ;;
+            --targetsystem=*)
+                TARGETSYSTEM=`get_opt_val $arg`
+                ;;
+            --target-prefix=*)
+                TARGET_PREFIX=`get_opt_val $arg`
+                ;;
+            --srcdir=*)
+                SRCDIR=`get_opt_val $arg`
+                ;;
+            --vardir=*)
+                VARDIR=`get_opt_val $arg`
+                ;;
+            --extra-chicken-options=*)
+                EXTRA_CHICKEN_OPTIONS=`get_opt_val $arg`
+                ;;
+            --linker=*)
+                LINKER=`get_opt_val $arg`
+                ;;
+            --profile-objects=*)
+                PROFILE_OBJECTS=`get_opt_val $arg`
+                ;;
+            --chicken=*)
+                CHICKEN=`get_opt_val $arg`
+                ;;
+            *)
+                echo_err "ERROR: Invalid option: $arg"
+                echo_err >&2
+                help 1
+                ;;
+        esac
+    done
+fi
+
+# Check the mandatory --platform option
+if [ -z "$PLATFORM" ]; then
+    echo_err "ERROR: missing --platform=<platform>"
+    echo_err ""
+    echo_err "<platform> is one of:"
+    show_platforms echo_err
+    exit 1
+else
+    is_valid_platform=
+    for p in $PLATFORMS; do
+        if [ "$PLATFORM" = "$p" ]; then
+            is_valid_platform=1
+            break
+        fi
+    done
+    if [ -z "$is_valid_platform" ]; then
+        echo_err "ERROR: invalid platform: $PLATFORM"
+        echo_err ""
+        echo_err "Available platforms:"
+        show_platforms echo_err
+        exit 1
+    fi
+fi
+
+echo "PLATFORM=$PLATFORM" > config.make
+set_var PREFIX "$PREFIX"
+set_var DEBUGBUILD "$DEBUGBUILD"
+set_var STATICBUILD "$STATICBUILD"
+set_var SYMBOLGC "$SYMBOLGC"
+set_var C_COMPILER "$C_COMPILER"
+set_var C_COMPILER_OPTIMIZATION_OPTIONS "$C_COMPILER_OPTIMIZATION_OPTIONS"
+set_var RC_COMPILER "$RC_COMPILER"
+set_var PROGRAM_PREFIX "$PROGRAM_PREFIX"
+set_var PROGRAM_SUFFIX "$PROGRAM_SUFFIX"
+set_var HOSTSYSTEM "$HOSTSYSTEM"
+set_var TARGETSYSTEM "$TARGETSYSTEM"
+set_var TARGET_PREFIX "$TARGET_PREFIX"
+set_var SRCDIR "$SRCDIR"
+set_var VARDIR "$VARDIR"
+set_var EXTRA_CHICKEN_OPTIONS "$EXTRA_CHICKEN_OPTIONS"
+set_var LINKER "$LINKER"
+set_var PROFILE_OBJECTS "$PROFILE_OBJECTS"
+set_var CHICKEN "$CHICKEN"
